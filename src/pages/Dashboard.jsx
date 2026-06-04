@@ -98,10 +98,13 @@ export default function Dashboard() {
   const [heroIndex, setHeroIndex] = useState(0)
 
   useEffect(() => {
-    fetch('http://localhost:4000/portfolio/projects')
-      .then(r => r.json()).then(d => { if(d.success) setPortfolioProjects(d.projects) }).catch(console.error)
-    fetch('http://localhost:4000/portfolio/stats')
-      .then(r => r.json()).then(d => { if(d.success) setPortfolioStats(d.stats) }).catch(console.error)
+    fetch(`${import.meta.env.BASE_URL}assets/portfolio_data.json`)
+      .then(r => r.json()).then(d => { 
+        if(d.success) {
+          setPortfolioProjects(d.projects)
+          setPortfolioStats(d.stats)
+        } 
+      }).catch(console.error)
   }, [])
 
   useEffect(() => {
