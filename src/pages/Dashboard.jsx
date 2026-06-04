@@ -50,7 +50,7 @@ const MOCK_PHOTOS = [
 const MOCK_PNG_ASSETS = [
   { id: 'png-1', name: 'Transparent T-Shirt Mockup PNG', category: 'png', description: 'High-res transparent background t-shirt mockup with no clipping masks.', previewAsset: '01_Mockup.png', isPremium: false, price: 0, file: '01_Mockup.png', tags: ['png', 'tshirt', 'transparent', 'mockup'] },
   { id: 'png-2', name: 'Kiddicare Nappy Packaging PNG', category: 'png', description: 'Product photography quality nappy packaging transparent PNG.', previewAsset: 'Kiddicare Nappy Pant mockup.png', isPremium: false, price: 0, file: 'Kiddicare Nappy Pant mockup.png', tags: ['png', 'packaging', 'product', 'transparent'] },
-  { id: 'png-3', name: 'GFXTAB Brand Logo PNG', category: 'png', description: 'Official GFXTAB wordmark on transparent background ΓÇö ready for use.', previewAsset: null, isPremium: false, price: 0, logoText: 'GFXTAB', tags: ['png', 'logo', 'brand', 'transparent'] },
+  { id: 'png-3', name: 'GFXTAB Brand Logo PNG', category: 'png', description: 'Official GFXTAB wordmark on transparent background — ready for use.', previewAsset: null, isPremium: false, price: 0, logoText: 'GFXTAB', tags: ['png', 'logo', 'brand', 'transparent'] },
 ]
 
 const MOCK_MAILERS = [
@@ -239,7 +239,7 @@ export default function Dashboard() {
         baseList = []
         break
       case 'vectors':
-        baseList = [] // Empty ΓÇö inquiry only
+        baseList = [] // Empty — inquiry only
         break
       case 'fonts':
         baseList = fontsList.length > 0 ? fontsList : MOCK_FONTS
@@ -257,7 +257,7 @@ export default function Dashboard() {
         baseList = MOCK_MAILERS
         break
       case 'mockups':
-        baseList = [] // Empty ΓÇö inquiry only
+        baseList = [] // Empty — inquiry only
         break
       case 'logos':
         baseList = []
@@ -534,7 +534,7 @@ export default function Dashboard() {
             <input
               type="text"
               id="marketplace-search"
-              placeholder={`Search anything ΓÇö fonts, logos, mockups, photos...`}
+              placeholder={`Search anything — fonts, logos, mockups, photos...`}
               value={searchInput}
               onChange={(e) => { setSearchInput(e.target.value); setShowSearchDropdown(true) }}
               onFocus={() => setShowSearchDropdown(true)}
@@ -740,9 +740,9 @@ export default function Dashboard() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
             {[
-              { title: 'Starter Plan', price: 'Γé╣2,499', period: 'month', posts: '15 Custom Posts', features: ['High-contrast designs', 'Source files included', '2 Revision cycles', '48-hour delivery'] },
-              { title: 'Growth Plan', price: 'Γé╣11,999', period: 'month', posts: '30 Custom Posts', features: ['Custom illustrations/infographics', 'Brand consistency matching', 'Unlimited revisions', 'Dedicated designer chat', 'Content calendar assistance'], popular: true },
-              { title: 'Elite Plan', price: 'Γé╣24,999', period: 'month', posts: '60 Custom Posts', features: ['Priority 24h delivery', 'Custom video animations', 'Unlimited design assets', 'Full social media branding suite', 'Weekly strategy syncs'] }
+              { title: 'Starter Plan', price: '₹2,499', period: 'month', posts: '15 Custom Posts', features: ['High-contrast designs', 'Source files included', '2 Revision cycles', '48-hour delivery'] },
+              { title: 'Growth Plan', price: '₹11,999', period: 'month', posts: '30 Custom Posts', features: ['Custom illustrations/infographics', 'Brand consistency matching', 'Unlimited revisions', 'Dedicated designer chat', 'Content calendar assistance'], popular: true },
+              { title: 'Elite Plan', price: '₹24,999', period: 'month', posts: '60 Custom Posts', features: ['Priority 24h delivery', 'Custom video animations', 'Unlimited design assets', 'Full social media branding suite', 'Weekly strategy syncs'] }
             ].map((plan, i) => (
               <GlassCard key={i} style={{ padding: 'var(--space-5)', border: plan.popular ? '1px solid var(--lime)' : '1px solid var(--glass-border)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 {plan.popular && (
@@ -759,7 +759,7 @@ export default function Dashboard() {
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-5) 0', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
                   {plan.features.map((feat, idx) => (
                     <li key={idx} style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: 'var(--lime)' }}>Γ£ô</span> {feat}
+                      <span style={{ color: 'var(--lime)' }}>✅</span> {feat}
                     </li>
                   ))}
                 </ul>
@@ -786,44 +786,44 @@ export default function Dashboard() {
                     title: 'No SaaS Layouts Stocked Yet',
                     desc: 'Currently, there are no pre-made Web & UI presentation templates listed. You can submit a custom brief to GFXTAB to generate one for you.',
                     btn: 'Submit custom UI inquiry',
-                    icon: '≡ƒûÑ∩╕Å'
+                    icon: '🖥️'
                   },
                   vectors: {
                     title: 'No Mockup Templates',
                     desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
                     btn: 'Inquire for Mockup design',
-                    icon: '≡ƒôÉ'
+                    icon: '📏'
                   },
                   icons: {
                     title: 'No Icons Pack Uploaded Yet',
                     desc: 'Our premium custom design icons library is empty. Submit a subject brief to get custom icons built.',
                     btn: 'Inquire for custom icon set',
-                    icon: 'Γ£¿'
+                    icon: '✨'
                   },
                   photos: {
                     title: 'No Photos & Images Uploaded Yet',
                     desc: 'Commercial photo listings and stock images are currently empty. You can request custom photography or AI image rendering.',
                     btn: 'Inquire for stock photography',
-                    icon: '≡ƒô╖'
+                    icon: '📸'
                   },
                   mailers: {
                     title: 'No Newsletter Templates',
                     desc: 'There are no active mailers or invitation layout templates available in this section. Custom newsletters can be requested.',
                     btn: 'Request custom newsletter layout',
-                    icon: 'Γ£ë∩╕Å'
+                    icon: '✉️'
                   },
                   logos: {
                     title: 'No Brand Logo Templates',
                     desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
                     btn: 'Inquire for Mockup design',
-                    icon: '≡ƒ¬¬'
+                    icon: '🎨'
                   }
                 }[selectedCategory] || {
                   title: 'No items found',
                   desc: 'No design assets found matching your search term or active filters. Try searching for something else.',
                   btn: 'Reset Filters & Search',
                   action: () => { setSearchQuery(''); setSortBy('trending'); },
-                  icon: '≡ƒöì'
+                  icon: '🔍'
                 }
 
                 const actionHandler = categoryMeta.action || (() => navigate('/contact', { state: { subject: `Inquiry for ${selectedCategory.replace('_', ' ')}` } }));
@@ -1188,7 +1188,7 @@ export default function Dashboard() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 'var(--space-2)' }}>
                           <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || p.category}</span>
                           <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: p.isPremium ? 'var(--lime)' : 'var(--text-secondary)' }}>
-                            {p.isPremium ? `Γé╣${p.price}` : 'Free'}
+                            {p.isPremium ? `₹${p.price}` : 'Free'}
                           </span>
                         </div>
                       </div>
@@ -1209,7 +1209,7 @@ export default function Dashboard() {
             position: 'sticky', top: 96
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 10 }}>
-              <span style={{ fontSize: '1.2rem' }}>≡ƒöì</span>
+              <span style={{ fontSize: '1.2rem' }}>🔍</span>
               <div>
                 <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Web Search Insights</h4>
                 <span style={{ fontSize: 9, color: 'var(--lime)', fontWeight: 600, letterSpacing: '0.05em' }}>AI REFERENCE MATRIX</span>
@@ -1229,7 +1229,7 @@ export default function Dashboard() {
                     border: '1px solid rgba(255,255,255,0.04)', display: 'block', textDecoration: 'none',
                     transition: 'all 0.2s'
                   }}>
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--lime)' }}>{f.name} Γåù</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--lime)' }}>{f.name} ↗</div>
                     <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{f.desc}</div>
                   </a>
                 ))}
@@ -1249,7 +1249,7 @@ export default function Dashboard() {
                     border: '1px solid rgba(255,255,255,0.04)', display: 'block', textDecoration: 'none',
                     transition: 'all 0.2s'
                   }}>
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ffffff' }}>{r.name} Γåù</div>
+                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ffffff' }}>{r.name} ↗</div>
                     <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{r.desc}</div>
                   </a>
                 ))}
@@ -1269,7 +1269,7 @@ export default function Dashboard() {
       {/* Platform Brand Footer */}
       <div style={{ textAlign: 'center', marginTop: 'var(--space-12)', padding: 'var(--space-6) 0', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
-          GFXTAB AI Studio & Marketplace ┬⌐ 2026. Production Version.
+          GFXTAB AI Studio & Marketplace © 2026. Production Version.
         </p>
       </div>
 
