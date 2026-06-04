@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { useUIStore, useAuthStore } from '@/store/index.js'
 import Tooltip from '@/components/ui/Tooltip.jsx'
+import mascotLogo from '@/assets/gfxtab.png'
+
 
 const NAV_ITEMS = [
   { path: '/dashboard',   icon: LayoutDashboard, label: 'Marketplace' },
@@ -64,8 +66,7 @@ export default function Sidebar() {
             border: '1px solid rgba(200, 255, 0, 0.2)',
             background: 'var(--void-3)'
           }}>
-            <img src={`${import.meta.env.BASE_URL}gfxtab.png`} alt="GFXTAB Mascot" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
-
+            <img src={mascotLogo} alt="GFXTAB Mascot" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
           </div>
           <AnimatePresence>
             {sidebarExpanded && (
