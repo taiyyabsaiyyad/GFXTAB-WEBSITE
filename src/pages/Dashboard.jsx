@@ -647,7 +647,7 @@ export default function Dashboard() {
                   const isFav = favorites.includes(p.id)
                   const preview = p.previewAsset && (p.previewAsset.startsWith('data:') || p.previewAsset.startsWith('http'))
                     ? p.previewAsset
-                    : (p.previewAsset ? `/assets/${p.previewAsset}` : '/assets/Artboard 1.jpg')
+                    : (p.previewAsset ? `${import.meta.env.BASE_URL}assets/${p.previewAsset}` : `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`)
                   
                   return (
                     <GlassCard 

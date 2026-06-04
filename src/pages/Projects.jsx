@@ -80,10 +80,10 @@ export default function Projects() {
   const getProductImage = (project) => {
     const mockupId = project.mockup_id || project.mockupId
     const product = [...PRODUCTS, ...creatorMockups].find(p => p.id === mockupId)
-    if (!product) return '/assets/Artboard 1.jpg'
+    if (!product) return `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`
     return product.previewAsset.startsWith('http') || product.previewAsset.startsWith('data:')
       ? product.previewAsset
-      : `/assets/${product.previewAsset}`
+      : `${import.meta.env.BASE_URL}assets/${product.previewAsset}`
   }
 
   const getProductCategory = (project) => {

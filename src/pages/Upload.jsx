@@ -977,7 +977,7 @@ export default function Upload() {
                     >
                       <div style={{ aspectRatio: '4/3', overflow: 'hidden', background: 'var(--void-2)' }}>
                         <img 
-                          src={m.previewAsset.startsWith('http') || m.previewAsset.startsWith('data:') ? m.previewAsset : `/assets/${m.previewAsset}`} 
+                          src={m.previewAsset.startsWith('http') || m.previewAsset.startsWith('data:') ? m.previewAsset : `${import.meta.env.BASE_URL}assets/${m.previewAsset}`} 
                           alt={m.name} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                         />

@@ -165,7 +165,7 @@ export default function Collections() {
                 style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 'var(--space-6)' }}
               >
                 {activeAssets.map((asset) => {
-                  const preview = asset.previewAsset ? `/assets/${asset.previewAsset}` : '/assets/Artboard 1.jpg'
+                  const preview = asset.previewAsset ? `${import.meta.env.BASE_URL}assets/${asset.previewAsset}` : `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`
                   return (
                     <GlassCard
                       key={asset.id}

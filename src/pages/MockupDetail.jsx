@@ -142,7 +142,7 @@ export default function MockupDetail() {
   const assetPrice = (asset.category === 'fonts' || asset.category === 'photos') ? 0 : (asset.price || 0)
   const preview = asset.previewAsset && (asset.previewAsset.startsWith('data:') || asset.previewAsset.startsWith('http'))
     ? asset.previewAsset
-    : (asset.previewAsset ? `/assets/${asset.previewAsset}` : '/assets/Artboard 1.jpg')
+    : (asset.previewAsset ? `${import.meta.env.BASE_URL}assets/${asset.previewAsset}` : `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`)
 
   // Trigger vector/font/mockup preview download
   const triggerDownloadAction = () => {

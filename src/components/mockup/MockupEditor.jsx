@@ -379,7 +379,7 @@ export default function MockupEditor() {
           >
             <Layer>
               {/* Background product template image */}
-              <ProductBackground src={product?.previewAsset ? (product.previewAsset.startsWith('data:') || product.previewAsset.startsWith('http') ? product.previewAsset : `/assets/${product.previewAsset}`) : null} />
+              <ProductBackground src={product?.previewAsset ? (product.previewAsset.startsWith('data:') || product.previewAsset.startsWith('http') ? product.previewAsset : `${import.meta.env.BASE_URL}assets/${product.previewAsset}`) : null} />
 
               {/* Grid */}
               {showGrid && Array.from({ length: 12 }, (_, i) => (

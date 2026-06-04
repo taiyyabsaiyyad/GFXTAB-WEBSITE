@@ -90,7 +90,7 @@ export default function AdminPanel() {
             approvalQueue.map((item) => (
               <GlassCard key={item.id} style={{ padding: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-6)' }}>
                 <div style={{ width: 100, height: 100, borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--void-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src={`/assets/${item.asset}`} alt={item.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                  <img src={`${import.meta.env.BASE_URL}assets/${item.asset}`} alt={item.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                 </div>
                 
                 <div style={{ flex: 1 }}>

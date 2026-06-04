@@ -49,7 +49,7 @@ export default function Library() {
       link.href = `http://localhost:4000/fonts/download/${fileName}`
     } else {
       // Mock source file
-      link.href = '/assets/Artboard 1.jpg'
+      link.href = `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`
       link.download = `gfxtab_download_${fileName}.jpg`
     }
     document.body.appendChild(link)
@@ -128,7 +128,10 @@ export default function Library() {
                 const name = dl.asset_name || dl.assetName || 'Vector Design File'
                 const assetId = dl.asset_id || dl.assetId || ''
                 const isFont = assetId.includes('font') || /\.(ttf|otf)$/i.test(assetId) || dl.preview_url === 'font-asset'
-                const preview = dl.preview_url || dl.previewUrl || '/assets/Artboard 1.jpg'
+                const rawPreview = dl.preview_url || dl.previewUrl || 'assets/Artboard 1.jpg'
+                const preview = rawPreview.startsWith('http') || rawPreview.startsWith('data:')
+                  ? rawPreview
+                  : (rawPreview.startsWith('/') ? rawPreview.replace(/^\//, import.meta.env.BASE_URL) : `${import.meta.env.BASE_URL}${rawPreview}`)
                 
                 return (
                   <GlassCard
