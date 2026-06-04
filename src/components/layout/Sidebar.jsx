@@ -64,7 +64,8 @@ export default function Sidebar() {
             border: '1px solid rgba(200, 255, 0, 0.2)',
             background: 'var(--void-3)'
           }}>
-            <img src="/gfxtab.png" alt="GFXTAB Mascot" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
+            <img src={`${import.meta.env.BASE_URL}gfxtab.png`} alt="GFXTAB Mascot" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
+
           </div>
           <AnimatePresence>
             {sidebarExpanded && (

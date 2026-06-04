@@ -21,6 +21,13 @@ export default function Library() {
     setLoading(true)
     try {
       fetchDownloads()
+      // Fetch static fonts library to enable name-to-filename mapping
+      fetch(`${import.meta.env.BASE_URL}assets/fonts_data.json`)
+        .then(res => res.json())
+        .then(data => {
+          setFontsList(data || [])
+        })
+        .catch(err => console.error('Library fonts list load error:', err))
     } catch (e) {
       console.error(e)
     }
@@ -34,12 +41,15 @@ export default function Library() {
     
     const fileName = dl.asset_id || dl.assetId
     const isLocalVector = fileName?.startsWith('shutterstock_') && fileName?.endsWith('.eps')
-    const isLocalFont = /\.(ttf|otf)$/i.test(fileName)
+    const matchedFont = fontsList.find(f => f.id === fileName || f.file === fileName)
+    const isLocalFont = matchedFont || /\.(ttf|otf)$/i.test(fileName) || dl.preview_url === 'font-asset' || dl.previewUrl === 'font-asset'
     
     if (isLocalVector) {
       link.href = `http://localhost:4000/vectors/download/${fileName}`
     } else if (isLocalFont) {
-      link.href = `http://localhost:4000/fonts/download/${fileName}`
+      const fontFile = matchedFont ? matchedFont.file : (fileName.endsWith('.otf') || fileName.endsWith('.ttf') ? fileName : `${fileName}.ttf`)
+      link.href = `${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(fontFile)}`
+      link.download = fontFile
     } else {
       // Mock source file
       link.href = `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`
@@ -107,12 +117,22 @@ export default function Library() {
             {/* Dynamic font-face style tags injection for library */}
             {fontsList.length > 0 && (
               <style>{`
-                ${fontsList.map(f => `
-                  @font-face {
-                    font-family: "${f.id}";
-                    src: url("http://localhost:4000/fonts/download/${encodeURIComponent(f.id)}") format("${f.id.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
-                  }
-                `).join('\n')}
+                ${filtered
+                  .filter(dl => {
+                    const fid = dl.asset_id || dl.assetId || ''
+                    return fid.includes('font') || dl.preview_url === 'font-asset' || dl.previewUrl === 'font-asset'
+                  })
+                  .map(dl => {
+                    const fid = dl.asset_id || dl.assetId
+                    const fObj = fontsList.find(f => f.id === fid || f.file === fid)
+                    if (!fObj) return ''
+                    return `
+                      @font-face {
+                        font-family: "${fObj.id}";
+                        src: url("${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(fObj.file)}") format("${fObj.file.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
+                      }
+                    `
+                  }).join('\n')}
               `}</style>
             )}
 

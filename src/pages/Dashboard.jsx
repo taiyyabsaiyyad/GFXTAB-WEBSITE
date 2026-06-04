@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('trending')
   const [previewText, setPreviewText] = useState('Grumpy wizards make toxic brew for the evil queen')
   const [photosAiOnly, setPhotosAiOnly] = useState(false)
+  const [displayLimit, setDisplayLimit] = useState(30)
   
   const [vectorsList, setVectorsList] = useState([])
   const [fontsList, setFontsList] = useState(MOCK_FONTS)
@@ -81,6 +82,10 @@ export default function Dashboard() {
   const [templatesList, setTemplatesList] = useState([])
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    setDisplayLimit(30)
+  }, [selectedCategory, searchQuery])
 
   useEffect(() => {
     if (location.state?.category) {
@@ -114,16 +119,28 @@ export default function Dashboard() {
     }
   }, [selectedCategory])
 
-  // Fonts are loaded from the extended MOCK_FONTS list (Google Fonts based)
+  // Fonts are loaded dynamically from the static fonts_data.json list (all 3000+ fonts)
   useEffect(() => {
     if (selectedCategory === 'fonts') {
       setLoading(true)
       setErrorMsg('')
-      // Use extended local mock font list — no backend required
-      setFontsList(MOCK_FONTS)
-      setLoading(false)
+      fetch(`${import.meta.env.BASE_URL}assets/fonts_data.json`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch fonts JSON')
+          return res.json()
+        })
+        .then((data) => {
+          setFontsList(data || [])
+        })
+        .catch((err) => {
+          console.error(err)
+          setErrorMsg('Failed to load local fonts directory from backend. Running client fallback.')
+          setFontsList(MOCK_FONTS)
+        })
+        .finally(() => setLoading(false))
     }
   }, [selectedCategory])
+
 
   // Fetch icons dynamically from local backend if selected
   useEffect(() => {
@@ -284,7 +301,9 @@ export default function Dashboard() {
     })
 
     const link = document.createElement('a')
-    link.href = `http://localhost:4000/fonts/download/${encodeURIComponent(font.id)}`
+    const fontFile = font.file || `${font.id}.ttf`
+    link.href = `${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(fontFile)}`
+    link.download = fontFile
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -507,12 +526,12 @@ export default function Dashboard() {
       )}
 
       {/* Dynamic font-face style tags injection */}
-      {selectedCategory === 'fonts' && fontsList.length > 0 && (
+      {selectedCategory === 'fonts' && activeList.length > 0 && (
         <style>{`
-          ${fontsList.map(f => `
+          ${activeList.slice(0, displayLimit).map(f => `
             @font-face {
               font-family: "${f.id}";
-              src: url("http://localhost:4000/fonts/download/${encodeURIComponent(f.id)}") format("${f.id.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
+              src: url("${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(f.file || (f.id + '.ttf'))}") format("${(f.file || f.id).toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
             }
           `).join('\n')}
         `}</style>
@@ -627,80 +646,90 @@ export default function Dashboard() {
               })()
             ) : selectedCategory === 'fonts' ? (
               /* Premium Fonts Row list (No Images, Google Fonts Style) */
-              <motion.div
-                key={`${selectedCategory}-${sortBy}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', width: '100%' }}
-              >
-                {activeList.map((p) => {
-                  const isFav = favorites.includes(p.id)
-                  return (
-                    <GlassCard 
-                      key={p.id}
-                      onClick={() => navigate(`/mockup/${p.id}`, { state: { assetType: selectedCategory } })}
-                      style={{
-                        padding: 'var(--space-5) var(--space-6)',
-                        cursor: 'pointer',
-                        display: 'grid',
-                        gridTemplateColumns: '240px 1fr',
-                        gap: 'var(--space-6)',
-                        alignItems: 'center',
-                        position: 'relative'
-                      }}
-                    >
-                      {/* Left Column: Metadata & Actions */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderRight: '1px solid var(--glass-border)', paddingRight: 'var(--space-6)' }}>
-                        <div>
-                          <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.name}</h3>
-                          <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || 'Free TTF/OTF'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', width: '100%' }}>
+                <motion.div
+                  key={`${selectedCategory}-${sortBy}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', width: '100%' }}
+                >
+                  {activeList.slice(0, displayLimit).map((p) => {
+                    const isFav = favorites.includes(p.id)
+                    return (
+                      <GlassCard 
+                        key={p.id}
+                        onClick={() => navigate(`/mockup/${p.id}`, { state: { assetType: selectedCategory } })}
+                        style={{
+                          padding: 'var(--space-5) var(--space-6)',
+                          cursor: 'pointer',
+                          display: 'grid',
+                          gridTemplateColumns: '240px 1fr',
+                          gap: 'var(--space-6)',
+                          alignItems: 'center',
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Left Column: Metadata & Actions */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderRight: '1px solid var(--glass-border)', paddingRight: 'var(--space-6)' }}>
+                          <div>
+                            <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.name}</h3>
+                            <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || 'Free TTF/OTF'}</span>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <GlowButton 
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); handleDownloadFont(p); }} 
+                              style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, justifyContent: 'center' }}
+                            >
+                              <Download size={12} /> Download Font
+                            </GlowButton>
+                            
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                              style={{
+                                width: 32, height: 32, borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--glass-border)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', color: isFav ? 'var(--red)' : 'var(--text-dim)',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Heart size={14} fill={isFav ? 'var(--red)' : 'none'} color={isFav ? 'var(--red)' : 'currentColor'} />
+                            </button>
+                          </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <GlowButton 
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); handleDownloadFont(p); }} 
-                            style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, justifyContent: 'center' }}
-                          >
-                            <Download size={12} /> Download Font
-                          </GlowButton>
-                          
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                            style={{
-                              width: 32, height: 32, borderRadius: '50%',
-                              background: 'rgba(255,255,255,0.03)',
-                              border: '1px solid var(--glass-border)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              cursor: 'pointer', color: isFav ? 'var(--red)' : 'var(--text-dim)',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            <Heart size={14} fill={isFav ? 'var(--red)' : 'none'} color={isFav ? 'var(--red)' : 'currentColor'} />
-                          </button>
+                        {/* Right Column: Live Typography preview */}
+                        <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: 64 }}>
+                          <span style={{
+                            fontFamily: `"${p.id}"`,
+                            fontSize: 'clamp(20px, 3.5vw, 42px)',
+                            color: 'var(--text-primary)',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            width: '100%',
+                            paddingLeft: 'var(--space-2)'
+                          }}>
+                            {previewText || p.name}
+                          </span>
                         </div>
-                      </div>
-
-                      {/* Right Column: Live Typography preview */}
-                      <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: 64 }}>
-                        <span style={{
-                          fontFamily: `"${p.id}"`,
-                          fontSize: 'clamp(20px, 3.5vw, 42px)',
-                          color: 'var(--text-primary)',
-                          whiteSpace: 'nowrap',
-                          textOverflow: 'ellipsis',
-                          overflow: 'hidden',
-                          width: '100%',
-                          paddingLeft: 'var(--space-2)'
-                        }}>
-                          {previewText || p.name}
-                        </span>
-                      </div>
-                    </GlassCard>
-                  )
-                })}
-              </motion.div>
+                      </GlassCard>
+                    )
+                  })}
+                </motion.div>
+                
+                {activeList.length > displayLimit && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-4)', paddingBottom: 'var(--space-8)' }}>
+                    <GlowButton onClick={() => setDisplayLimit(limit => limit + 30)}>
+                      Load More Fonts (+{activeList.length - displayLimit} remaining)
+                    </GlowButton>
+                  </div>
+                )}
+              </div>
             ) : (
               /* Mockups grid layout (Other works) */
               <motion.div

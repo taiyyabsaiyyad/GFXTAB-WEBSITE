@@ -83,10 +83,26 @@ export default function MockupDetail() {
   useEffect(() => {
     if (!staticAsset && id) {
       setLoading(true)
-      let apiEndpoint = 'http://localhost:4000/vectors/list'
+      
       if (assetType === 'fonts') {
-        apiEndpoint = 'http://localhost:4000/fonts/list'
-      } else if (assetType === 'icons') {
+        fetch(`${import.meta.env.BASE_URL}assets/fonts_data.json`)
+          .then(res => res.json())
+          .then(data => {
+            const found = data?.find(v => v.id === id)
+            if (found) {
+              setVectorAsset(found)
+              setLikesCount((found.popularity || 15) * 3 + 24)
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching static fonts metadata:', err)
+          })
+          .finally(() => setLoading(false))
+        return
+      }
+
+      let apiEndpoint = 'http://localhost:4000/vectors/list'
+      if (assetType === 'icons') {
         apiEndpoint = 'http://localhost:4000/icons/list'
       } else if (assetType === 'templates') {
         apiEndpoint = 'http://localhost:4000/templates/list'
@@ -99,8 +115,7 @@ export default function MockupDetail() {
         .then(data => {
           if (data.success) {
             let list = []
-            if (assetType === 'fonts') list = data.fonts
-            else if (assetType === 'vectors') list = data.vectors
+            if (assetType === 'vectors') list = data.vectors
             else if (assetType === 'icons') list = data.icons
             else if (assetType === 'templates') list = data.templates
             else if (assetType === 'mockups') list = data.mockups
@@ -172,7 +187,8 @@ export default function MockupDetail() {
     if (asset.category === 'vectors') {
       link.href = `http://localhost:4000/vectors/download/${asset.id}`
     } else if (asset.category === 'fonts') {
-      link.href = `http://localhost:4000/fonts/download/${asset.id}`
+      link.href = `${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(asset.file || (asset.id + '.ttf'))}`
+      link.download = asset.file || `${asset.name}.ttf`
     } else {
       // Mock icon/template download or high-res preview mockup
       link.href = preview
@@ -282,7 +298,7 @@ Custom Requirements: ${inquiryMessage}`
               <style>{`
                 @font-face {
                   font-family: "${asset.id}";
-                  src: url("http://localhost:4000/fonts/download/${encodeURIComponent(asset.id)}") format("${asset.id.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
+                  src: url("${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(asset.file || (asset.id + '.ttf'))}") format("${(asset.file || asset.id).toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
                 }
               `}</style>
               
