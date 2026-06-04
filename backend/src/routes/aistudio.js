@@ -63,7 +63,7 @@ function classifyIntent(message) {
 
 
 // ── System Prompt Builder ─────────────────────────────────────────
-function buildSystemPrompt(memory) {
+function buildSystemPrompt(memory, aiMode = 'Chat') {
   const name = memory.userName ? `The user's name is ${memory.userName}.` : ''
   const brand = memory.brand ? `Their brand is: "${memory.brand}".` : ''
   const style = memory.style ? `Their preferred design style: ${memory.style}.` : ''
@@ -71,29 +71,33 @@ function buildSystemPrompt(memory) {
   const project = memory.recentProject ? `Most recent project type: ${memory.recentProject}.` : ''
   const colorPrefs = memory.colorPrefs ? `Color preferences: ${memory.colorPrefs}.` : ''
 
-  return `You are GFXTAB AI Studio — the world's most advanced AI creative partner, built by GFXTAB Productions.
+  // Agent Role specialization based on aiMode
+  let agentRole = 'a senior creative director'
+  if (aiMode === 'Logo' || aiMode === 'Branding') agentRole = 'a master brand identity designer (Pentagram level)'
+  else if (aiMode === 'Social Media Post' || aiMode === 'Campaign Design') agentRole = 'an expert social media strategist and designer'
+  else if (aiMode === 'Website Layout' || aiMode === 'UI/UX') agentRole = 'a top-tier UI/UX product designer (Linear/Vercel level)'
+  else if (aiMode === 'Motion Idea' || aiMode === 'Video Editing') agentRole = 'a cutting-edge motion graphics director'
+  else if (aiMode === 'Creative Brief' || aiMode === 'Multi-Agent Plan') agentRole = 'a visionary creative strategist'
 
-You combine the intelligence of: a senior creative director (20yr agency experience), a world-class brand strategist (Pentagram/Collins level), a top Midjourney prompt engineer, a conversion copywriting expert, and a UI/UX systems designer (Linear/Vercel/Stripe level quality).
+  return `You are GFXTAB AI Studio — the world's most advanced AI creative partner. You are acting as ${agentRole}.
 
 User context — always apply: ${name} ${brand} ${style} ${industry} ${project} ${colorPrefs}
 
 Rules:
 1. NEVER give generic or repetitive responses. Every reply is uniquely crafted for this exact user.
-2. Read deep creative intent. "Make a logo" means: understand industry, audience, emotion, style — THEN generate.
-3. Think: Intent → Brand Context → Strategy → Creative Direction → Execution → Generate.
+2. Read deep creative intent. "Make a logo" means: understand industry, audience, emotion, style — THEN propose a brief.
+3. If the user asks for a design generation (logo, UI, image, mockup), DO NOT just say "Here is your image". Instead, generate a structured design brief containing: Project Goal, Style Direction, Color Palette, Typography, and 4 Variations.
 4. Use Markdown beautifully: **bold** for emphasis, bullet lists, code blocks for hex/prompts, headers for sections.
 5. Personality: Confident, creative, fast, precise. Like the best designer they've ever worked with.
-6. For image tasks: share (a) creative strategy, (b) engineered prompt used, (c) what they'll receive.
-7. Remember EVERYTHING. Build on context. Never repeat yourself. Grow the session.
-8. Give 2-3 strategic options with brief rationale, then proceed with the best one.
-9. High signal-to-noise. No filler. Every word earns its place.
-10. Output quality: $500/hour creative director, not a chatbot.`
+6. Remember EVERYTHING. Build on context. Never repeat yourself. Grow the session.
+7. Give 2-3 strategic options with brief rationale, then proceed with the best one.
+8. High signal-to-noise. No filler. Every word earns its place.`
 }
 
 
 // ── Gemini Streaming Chat ─────────────────────────────────────────
 router.post('/chat/stream', async (req, res) => {
-  const { message, sessionId } = req.body
+  const { message, sessionId, aiMode = 'Chat', attachments = [] } = req.body
   if (!message || !sessionId) {
     return res.status(400).json({ error: 'message and sessionId required' })
   }
@@ -102,7 +106,7 @@ router.post('/chat/stream', async (req, res) => {
   const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-latest'
   if (!GEMINI_API_KEY) {
     // Fallback to intelligent simulated response if no API key
-    return simulatedStream(req, res, message, sessionId)
+    return simulatedStream(req, res, message, sessionId, aiMode, attachments)
   }
 
   const session = getSession(sessionId)
@@ -119,19 +123,33 @@ router.post('/chat/stream', async (req, res) => {
   if (industryMatch) session.memory.industry = industryMatch[1]
   if (intent.type !== 'chat') session.memory.recentProject = intent.type
 
-
   // Build conversation history for Gemini
-  const systemPrompt = buildSystemPrompt(session.memory)
+  const systemPrompt = buildSystemPrompt(session.memory, aiMode)
   const engineeredPrompt = intent.needsImage ? engineerPrompt(message, intent.type, session.memory) : null
+
+  // Handle attachments (Base64 images)
+  const currentMessageParts = [{ text: message }]
+  attachments.forEach(att => {
+    // Split "data:image/png;base64,iVBORw..."
+    const match = att.match(/^data:(image\/[a-zA-Z]*);base64,([^"]*)$/)
+    if (match) {
+      currentMessageParts.push({
+        inline_data: {
+          mime_type: match[1],
+          data: match[2]
+        }
+      })
+    }
+  })
 
   const contents = [
     ...session.history.map(h => ({
       role: h.role,
-      parts: [{ text: h.content }]
+      parts: h.parts || [{ text: h.content }]
     })),
     {
       role: 'user',
-      parts: [{ text: message }]
+      parts: currentMessageParts
     }
   ]
 
@@ -205,7 +223,7 @@ router.post('/chat/stream', async (req, res) => {
 })
 
 // ── Simulated Intelligent Stream (No API Key / Fallback) ──────────
-async function simulatedStream(req, res, message, sessionId, isError = false) {
+async function simulatedStream(req, res, message, sessionId, aiMode = 'Chat', attachments = [], isError = false) {
   const session = getSession(sessionId)
   const intent = classifyIntent(message)
 
@@ -223,7 +241,7 @@ async function simulatedStream(req, res, message, sessionId, isError = false) {
   const engineeredPrompt = intent.needsImage ? engineerPrompt(message, intent.type, session.memory) : null
   const mem = session.memory
 
-  const response = generateDynamicResponse(message, intent, mem, session.history)
+  const response = generateDynamicResponse(message, intent, mem, session.history, aiMode, attachments)
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
@@ -251,13 +269,24 @@ async function simulatedStream(req, res, message, sessionId, isError = false) {
 }
 
 // ── 6 Specialist Agent System ─────────────────────────────────────
-function generateDynamicResponse(message, intent, mem, history) {
+function generateDynamicResponse(message, intent, mem, history, aiMode, attachments) {
   const m = message.toLowerCase()
   const name = mem.userName || 'Creative'
   const brand = mem.brand || 'your brand'
   const style = mem.style || null
   const industry = mem.industry || null
   const isFollowUp = history.length > 2
+  
+  const attachmentStr = attachments && attachments.length > 0 ? `\n\n*(I have analyzed your ${attachments.length} uploaded reference(s) to inform this direction)*\n` : ''
+
+  // ─ AI MODE LOGIC OVERRIDE ──────────────────────────────────────────
+  if (aiMode === 'Website Layout' || aiMode === 'UI/UX') {
+    return `**GFXTAB ${aiMode} Agent** — Initializing structured layout for **${brand}**.\n${attachmentStr}\n**Design System Proposal:**\n\n1. **Hero Section:** High-contrast typography with an immersive background element.\n2. **Color Palette:** Dark-mode primary (#090910) with neon green (#C8FF00) interactive accents.\n3. **Typography:** 'Inter' for UI components, 'Clash Display' for bold headings.\n\nI can generate wireframes or high-fidelity UI mockups based on this structure. Should I proceed?`
+  }
+
+  if (aiMode === 'Motion Idea' || aiMode === 'Video Editing') {
+    return `**GFXTAB Motion Agent** — Let's bring **${brand}** to life.\n${attachmentStr}\n**Motion Concept 1: Kinetic Flow**\n- **Intro:** Fast typography reveal scaling up.\n- **Main:** 3D glassy objects floating around the product.\n- **Outro:** Glitch transition into the logo.\n\n**Motion Concept 2: Smooth Editorial**\n- **Intro:** Slow pan across high-res textures.\n- **Main:** Elegant fade-ins with soft masking.\n\nWhich pacing fits your brand better: energetic/fast or smooth/premium?`
+  }
 
   // ─ LOGO AGENT ─────────────────────────────────────────────────────
   if (intent.type === 'logo') {
@@ -469,5 +498,129 @@ function generateSvgDataUrl(text, primaryColor, secondaryColor) {
   </svg>`
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
+
+// ── NEW: Advanced Design Pipeline Generation ────────────────────────
+router.post('/generate/design-pipeline', async (req, res) => {
+  const { prompt, sessionId } = req.body
+  if (!prompt) return res.status(400).json({ error: 'Prompt required' })
+
+  const session = getSession(sessionId || 'global')
+  const intent = classifyIntent(prompt)
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+  
+  // Create fallback pipeline output if no API key or if Gemini generation fails
+  const getFallbackPipeline = (basePrompt) => ({
+    conceptName: `${basePrompt.slice(0, 15)} System`,
+    designStyle: session.memory.style || 'Modern Minimalist',
+    colorSystem: 'High Contrast Neon',
+    targetAudience: session.memory.industry || 'Digital Natives',
+    commercialUseCases: 'Brand Identity, Web UI, Social Marketing',
+    brandPersonality: 'Innovative, Bold, Premium',
+    confidenceScore: 92,
+    variations: [
+      { id: 'var-1', title: 'Option 1: Geometric Minimal', style: 'Geometric', description: 'Clean lines and sharp angles.', palette: ['#c8ff00', '#ffffff'], imagePrompt: `Geometric minimal ${basePrompt}` },
+      { id: 'var-2', title: 'Option 2: Luxury Emblem', style: 'Luxury', description: 'Premium crest with metallic hints.', palette: ['#C9A84C', '#ffffff'], imagePrompt: `Luxury emblem ${basePrompt}` },
+      { id: 'var-3', title: 'Option 3: Abstract Dynamic', style: 'Abstract', description: 'Fluid shapes with motion blur.', palette: ['#06b6d4', '#ffffff'], imagePrompt: `Abstract dynamic ${basePrompt}` },
+      { id: 'var-4', title: 'Option 4: Brutalist Typographic', style: 'Brutalist', description: 'High contrast stark typography.', palette: ['#f97316', '#1e1b4b'], imagePrompt: `Brutalist typographic ${basePrompt}` }
+    ]
+  })
+
+  let pipelineData;
+
+  if (!GEMINI_API_KEY) {
+    pipelineData = getFallbackPipeline(prompt)
+  } else {
+    try {
+      // Step 1: Generate the pipeline strategy and 4 distinct prompts using Gemini
+      const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-latest'
+      
+      const systemInstruction = `You are the GFXTAB Master Creative Director. 
+Analyze the user's prompt: "${prompt}".
+Generate a highly structured JSON response detailing the creative strategy and 4 DISTINCT visual design directions.
+Do NOT just vary the color. If the prompt is "Cyberpunk Astronaut", the 4 directions should be radically different (e.g., Helmet Logo, Space Badge, Mascot, Minimal Orbit Monogram).
+
+JSON Schema:
+{
+  "conceptName": "String (e.g., Nexus Identity System)",
+  "designStyle": "String",
+  "colorSystem": "String",
+  "targetAudience": "String",
+  "commercialUseCases": "String",
+  "brandPersonality": "String",
+  "confidenceScore": Number (1-100),
+  "variations": [
+    {
+      "id": "var-1",
+      "title": "String (e.g., Futuristic Helmet Logo)",
+      "style": "String (e.g., Line Art)",
+      "description": "String (short rationale)",
+      "palette": ["hex", "hex"],
+      "imagePrompt": "String (Highly engineered Midjourney/Imagen prompt for this SPECIFIC variant)"
+    },
+    // 3 more distinct variations
+  ]
+}`
+
+      const geminiRes = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+        {
+          contents: [{ role: 'user', parts: [{ text: "Generate the design pipeline JSON." }] }],
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: { temperature: 0.8, responseMimeType: "application/json" }
+        },
+        { headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_API_KEY } }
+      )
+
+      const responseText = geminiRes.data.candidates[0].content.parts[0].text
+      pipelineData = JSON.parse(responseText)
+      
+      // Ensure exactly 4 variations exist
+      if (!pipelineData.variations || pipelineData.variations.length === 0) {
+        pipelineData = getFallbackPipeline(prompt)
+      } else {
+        while (pipelineData.variations.length < 4) {
+          pipelineData.variations.push(pipelineData.variations[0])
+        }
+        pipelineData.variations = pipelineData.variations.slice(0, 4)
+      }
+
+    } catch (err) {
+      console.error('Pipeline strategy generation failed:', err.message)
+      pipelineData = getFallbackPipeline(prompt)
+    }
+  }
+
+  // Step 2: Generate actual images for the 4 distinct variations
+  const variantsWithImages = await Promise.all(pipelineData.variations.map(async (v, index) => {
+    let imageUrl = generateSvgDataUrl(v.title, v.palette[0] || '#c8ff00', v.palette[1] || '#ffffff')
+
+    if (GEMINI_API_KEY) {
+      try {
+        const imageRes = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`,
+          {
+            instances: [{ prompt: v.imagePrompt }],
+            parameters: { sampleCount: 1, aspectRatio: '1:1' }
+          },
+          { headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_API_KEY } }
+        )
+        const b64 = imageRes.data?.predictions?.[0]?.bytesBase64Encoded
+        if (b64) imageUrl = `data:image/png;base64,${b64}`
+      } catch (e) {
+        console.error(`Image gen failed for var ${index}:`, e.message)
+      }
+    }
+
+    return {
+      ...v,
+      id: `var-${index + 1}`,
+      url: imageUrl
+    }
+  }))
+
+  pipelineData.variations = variantsWithImages
+
+  res.json({ success: true, pipeline: pipelineData })
+})
 
 module.exports = router

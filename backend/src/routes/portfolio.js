@@ -1,0 +1,247 @@
+const express = require('express')
+const router = express.Router()
+
+// Dynamic Portfolio CMS Database Simulation
+const PORTFOLIO_PROJECTS = [
+  {
+    id: 'crime-check-branding',
+    title: 'CRIME CHECK Identity System',
+    category: 'Branding',
+    year: '2023',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(1).jpg',
+    videoUrl: '', // Could be a local mp4 later
+    overview: 'Complete brand identity overhaul for a digital security compliance firm, focusing on trust, modernity, and stark minimalism.',
+    client: 'Crime Check Inc.',
+    tools: ['Illustrator', 'Photoshop', 'Figma'],
+    stats: [
+      { label: 'Brand Guidelines', value: '45 Pages' },
+      { label: 'Client Growth', value: '+210%' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(2).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(3).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(4).jpg' }
+    ]
+  },
+  {
+    id: 'sigenergy-campaign',
+    title: 'Sigenergy Integrated Campaign',
+    category: 'Campaign Design',
+    year: '2024',
+    type: 'carousel',
+    coverImage: 'Photo from GFXTAB(5).jpg',
+    overview: 'A high-energy, multi-platform product campaign focusing on sustainable energy and tech innovation.',
+    client: 'Sigenergy',
+    tools: ['Photoshop', 'After Effects', 'Premiere'],
+    stats: [
+      { label: 'Impressions', value: '1.4M' },
+      { label: 'Conversion', value: '12%' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(6).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(7).jpg' }
+    ]
+  },
+  {
+    id: 'sebone-website',
+    title: 'Sebone Technologies Web UI',
+    category: 'UI/UX',
+    year: '2024',
+    type: 'web_mockup',
+    coverImage: 'Photo from GFXTAB(8).jpg',
+    overview: 'A sleek, dark-mode SaaS interface designed to convert enterprise clients.',
+    client: 'Sebone Technologies',
+    tools: ['Figma', 'Protopie'],
+    stats: [
+      { label: 'Bounce Rate', value: '-34%' },
+      { label: 'Screens', value: '24' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(9).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(10).jpg' }
+    ]
+  },
+  {
+    id: 'bdv-logo',
+    title: 'BDV Logo Concept Presentation',
+    category: 'Logo Design',
+    year: '2023',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(11).jpg',
+    overview: 'A dynamic monogram concept exploring kinetic typography and deep brand values.',
+    client: 'BDV Ventures',
+    tools: ['Illustrator', 'After Effects'],
+    stats: [
+      { label: 'Concepts', value: '3' },
+      { label: 'Revisions', value: '0' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(12).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(13).jpg' }
+    ]
+  },
+  {
+    id: 'lamar-healthcare',
+    title: "L'Amar Healthcare Branding",
+    category: 'Branding',
+    year: '2023',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(14).jpg',
+    overview: 'Empathetic and trustworthy visual language for a modern healthcare provider.',
+    client: "L'Amar",
+    tools: ['Illustrator', 'Photoshop'],
+    stats: [
+      { label: 'Deliverables', value: '18 Assets' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(15).jpg' }
+    ]
+  },
+  {
+    id: 'premium-basket',
+    title: 'Premium Basket Packaging',
+    category: 'Packaging Design',
+    year: '2024',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(16).jpg',
+    overview: 'Luxury packaging design for an artisanal food basket company. High-end foil stamping and deep colors.',
+    client: 'Premium Basket',
+    tools: ['Illustrator', 'Dimension'],
+    stats: [
+      { label: 'SKUs', value: '8' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(17).jpg' }
+    ]
+  },
+  {
+    id: 'lenskart-social',
+    title: 'Lenskart IPO Social Campaign',
+    category: 'Social Media',
+    year: '2023',
+    type: 'carousel',
+    coverImage: 'Photo from GFXTAB(18).jpg',
+    overview: 'A high-impact social media carousel series driving awareness for a major IPO.',
+    client: 'Lenskart',
+    tools: ['Photoshop', 'Figma'],
+    stats: [
+      { label: 'Reach', value: '4.2M' },
+      { label: 'Engagement', value: '8.4%' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(19).jpg' },
+      { type: 'image', url: 'Photo from GFXTAB(20).jpg' }
+    ]
+  },
+  {
+    id: 'festive-motion-reel',
+    title: 'Motion Graphic Festive Reel',
+    category: 'Motion Graphics',
+    year: '2024',
+    type: 'video',
+    coverImage: 'Photo from GFXTAB(21).jpg',
+    overview: 'Vibrant, fast-paced 3D/2D mixed motion graphics reel celebrating festive seasons.',
+    client: 'Internal GFXTAB',
+    tools: ['After Effects', 'Cinema 4D'],
+    stats: [
+      { label: 'Duration', value: '45s' },
+      { label: 'Views', value: '12K' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(22).jpg' }
+    ]
+  },
+  {
+    id: 'technonicol-brand',
+    title: 'Technonicol India Visuals',
+    category: 'Campaign Design',
+    year: '2023',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(23).jpg',
+    overview: 'Strong, structural visual assets for an industrial manufacturing giant.',
+    client: 'Technonicol',
+    tools: ['Photoshop', 'Lightroom'],
+    stats: [
+      { label: 'Assets', value: '40+' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(24).jpg' }
+    ]
+  },
+  {
+    id: 'stat-times-editorial',
+    title: 'STAT Times Editorial Design',
+    category: 'Editorial Design',
+    year: '2023',
+    type: 'masonry',
+    coverImage: 'Photo from GFXTAB(25).jpg',
+    overview: 'Clean, typography-driven editorial layout for a logistics business magazine.',
+    client: 'STAT Times',
+    tools: ['InDesign', 'Photoshop'],
+    stats: [
+      { label: 'Pages Layout', value: '120' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(26).jpg' }
+    ]
+  },
+  {
+    id: 'servd-content',
+    title: 'Servd Content System',
+    category: 'Social Media',
+    year: '2024',
+    type: 'carousel',
+    coverImage: 'Photo from GFXTAB(27).jpg',
+    overview: 'A scalable content design system for a rapidly growing SaaS product.',
+    client: 'Servd',
+    tools: ['Figma'],
+    stats: [
+      { label: 'Templates', value: '24' }
+    ],
+    behanceUrl: 'https://www.behance.net/gfxtab',
+    gallery: [
+      { type: 'image', url: 'Photo from GFXTAB(28).jpg' }
+    ]
+  }
+]
+
+// GET all projects
+router.get('/projects', (req, res) => {
+  res.json({ success: true, projects: PORTFOLIO_PROJECTS })
+})
+
+// GET single project
+router.get('/projects/:id', (req, res) => {
+  const project = PORTFOLIO_PROJECTS.find(p => p.id === req.params.id)
+  if (project) {
+    res.json({ success: true, project })
+  } else {
+    res.status(404).json({ success: false, message: 'Project not found' })
+  }
+})
+
+// GET portfolio stats
+router.get('/stats', (req, res) => {
+  res.json({
+    success: true,
+    stats: {
+      totalProjects: PORTFOLIO_PROJECTS.length,
+      yearsExperience: 8,
+      brandIdentities: PORTFOLIO_PROJECTS.filter(p => p.category === 'Branding' || p.category === 'Logo Design').length,
+      globalClients: 45
+    }
+  })
+})
+
+module.exports = router

@@ -271,6 +271,7 @@ app.use('/export', exportRoutes)
 app.use('/projects', projectRoutes)
 app.use('/brands', brandRoutes)
 app.use('/studio', aiStudioRoutes)
+app.use('/portfolio', require('./routes/portfolio'))
 
 // ---- User Activity Tracking API ----
 app.post('/track', (req, res) => {

@@ -1,1011 +1,405 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Grid, Star, Heart, Sparkles, Filter, SlidersHorizontal, RefreshCw, Download } from 'lucide-react'
-import { GlowButton, GhostButton } from '@/components/ui/Button.jsx'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, ChevronLeft, ChevronRight, Play, Eye, ExternalLink, Activity, FolderGit2, Star, Target } from 'lucide-react'
 import { GlassCard } from '@/components/ui/Card.jsx'
-import { PRODUCTS, MOCK_FREEBIES } from '@/constants/products.js'
-import { useAuthStore, useCollectionStore, useDownloadStore, useMarketplaceStore } from '@/store/index.js'
+import { GlowButton, GhostButton } from '@/components/ui/Button.jsx'
 import { notify } from '@/components/ui/Toast.jsx'
 import { trackEvent } from '@/utils/tracker.js'
 
-const FONT_STYLE_GROUPS = {
-  sans: ['sans', 'grotesk', 'clean', 'modern', 'geometric', 'gothic', 'round', 'neo', 'tech'],
-  serif: ['serif', 'slab', 'roman', 'classic', 'elegant', 'editorial', 'vintage', 'newspaper', 'retro'],
-  script: ['script', 'signature', 'handwritten', 'cursive', 'brush', 'calligraphy', 'hand', 'comic'],
-  display: ['display', 'bold', 'heavy', 'black', 'retro', 'futuristic', 'cyberpunk', 'cartoon', 'comic', 'fancy', 'decorative', 'poster']
-}
-
-const MOCK_FONTS = [
-  { id: 'font-clash', name: 'Clash Display Font', category: 'fonts', description: 'Bold, premium display typography for branding layouts.', previewAsset: 'Photo from GFXTAB(17).jpg', isPremium: false, price: 0, tags: ['typography', 'display', 'sans'] },
-  { id: 'font-sans', name: 'General Sans Typeface', category: 'fonts', description: 'Neutral, clean sans-serif typeface optimized for UI copy.', previewAsset: 'Photo from GFXTAB(18).jpg', isPremium: false, price: 0, tags: ['typography', 'sans', 'body'] },
-  { id: 'font-cabinet', name: 'Cabinet Grotesk', category: 'fonts', description: 'Playful grotesque display font with vintage modern aesthetics.', previewAsset: 'Photo from GFXTAB(19).jpg', isPremium: false, price: 0, tags: ['grotesque', 'headings', 'type'] },
-]
-
-const MOCK_ICONS = []
-
-const MOCK_WEB_UI = [
-  { id: 'web-saas', name: 'SaaS Platform Presentation', category: 'web_ui', description: 'Clean modern mockup presentation of a SaaS web app dashboard.', previewAsset: 'Photo from GFXTAB(26).jpg', isPremium: false, tags: ['web', 'ui', 'saas', 'landing'] },
-  { id: 'web-mobile', name: 'Finance Mobile App UI', category: 'web_ui', description: 'Premium visual presentation showing a modern mobile cryptocurrency app interface.', previewAsset: 'Photo from GFXTAB(27).jpg', isPremium: true, price: 49, tags: ['mobile', 'ui', 'finance', 'ios'] },
-  { id: 'web-ecom', name: 'Minimal E-Commerce Layout', category: 'web_ui', description: 'E-commerce platform presentation with clean catalog grids and minimalist typography.', previewAsset: 'Photo from GFXTAB(28).jpg', isPremium: false, tags: ['web', 'ui', 'ecom', 'shop'] },
-]
-
-const MOCK_VECTORS = [
-  { id: 'vector-1', name: 'Minimalist Line Logo Pack', category: 'vectors', description: 'A collection of 15 clean, geometric line art logo templates.', previewAsset: 'Photo from GFXTAB(21).jpg', isPremium: false, tags: ['vector', 'logo', 'lineart'] },
-  { id: 'vector-2', name: 'Abstract Organic Shapes', category: 'vectors', description: 'Stunning organic abstract shapes for modern branding and posters.', previewAsset: 'Photo from GFXTAB(22).jpg', isPremium: true, price: 29, tags: ['vector', 'abstract', 'organic'] },
-  { id: 'vector-3', name: 'Isometric Tech Workspace', category: 'vectors', description: 'Highly detailed vector illustration of a modern developer home office.', previewAsset: 'Photo from GFXTAB(23).jpg', isPremium: false, tags: ['vector', 'tech', 'isometric'] },
-]
-
-const MOCK_PHOTOS = [
-  { id: 'photo-1', name: 'Modern Creative Workspace', category: 'photos', description: 'High-resolution commercial photograph of a designer home office setup.', previewAsset: 'Photo from GFXTAB(31).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'office', 'lifestyle'] },
-  { id: 'photo-2', name: 'Minimalist Clay Pots Still Life', category: 'photos', description: 'Elegant commercial photo of textured ceramic vases in warm natural light.', previewAsset: 'Photo from GFXTAB(32).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'interior', 'minimalist'] },
-  { id: 'photo-3', name: 'Cyberpunk Neon Street Art (AI)', category: 'photos', description: 'Stunning futuristic night photograph of neon-lit Tokyo street signs.', previewAsset: 'Photo from GFXTAB(33).jpg', isPremium: false, price: 0, isAi: true, tags: ['photo', 'cyberpunk', 'neon', 'ai'] },
-  { id: 'photo-4', name: 'Surreal Organic Landscape (AI)', category: 'photos', description: 'Dreamy visual illustration depicting futuristic glowing desert dunes.', previewAsset: 'Photo from GFXTAB(34).jpg', isPremium: false, price: 0, isAi: true, tags: ['photo', 'surreal', 'landscape', 'ai'] },
-  { id: 'photo-5', name: 'Branding Identity Setup', category: 'photos', description: 'Premium flat-lay mockup for brand identity and stationery presentation.', previewAsset: 'Photo from GFXTAB(35).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'branding', 'flatlay'] },
-  { id: 'photo-6', name: 'Business Card Mockup Shoot', category: 'photos', description: 'Clean photographic mockup for business cards on textured surface.', previewAsset: 'Photo from GFXTAB(2).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'business', 'card'] },
-  { id: 'photo-7', name: 'Packaging Lifestyle Shot', category: 'photos', description: 'Real product lifestyle photography of premium packaging in natural setting.', previewAsset: 'Photo from GFXTAB(3).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'packaging', 'lifestyle'] },
-  { id: 'photo-8', name: 'Minimal Desk Aesthetic', category: 'photos', description: 'High-contrast minimal desk setup with tech accessories.', previewAsset: 'Photo from GFXTAB(5).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'desk', 'minimal'] },
-]
-
-const MOCK_PNG_ASSETS = [
-  { id: 'png-1', name: 'Transparent T-Shirt Mockup PNG', category: 'png', description: 'High-res transparent background t-shirt mockup with no clipping masks.', previewAsset: '01_Mockup.png', isPremium: false, price: 0, file: '01_Mockup.png', tags: ['png', 'tshirt', 'transparent', 'mockup'] },
-  { id: 'png-2', name: 'Kiddicare Nappy Packaging PNG', category: 'png', description: 'Product photography quality nappy packaging transparent PNG.', previewAsset: 'Kiddicare Nappy Pant mockup.png', isPremium: false, price: 0, file: 'Kiddicare Nappy Pant mockup.png', tags: ['png', 'packaging', 'product', 'transparent'] },
-  { id: 'png-3', name: 'GFXTAB Brand Logo PNG', category: 'png', description: 'Official GFXTAB wordmark on transparent background — ready for use.', previewAsset: null, isPremium: false, price: 0, logoText: 'GFXTAB', tags: ['png', 'logo', 'brand', 'transparent'] },
-]
-
-const MOCK_MAILERS = [
-  { id: 'mailer-1', name: 'Minimalist Wedding Invitation', category: 'mailers', description: 'Clean, elegant print-ready wedding invitation layouts.', previewAsset: 'Photo from GFXTAB(36).jpg', isPremium: false, tags: ['invitation', 'wedding', 'print'] },
-  { id: 'mailer-2', name: 'SaaS Platform Product Update', category: 'mailers', description: 'High-converting email newsletter template layout for product releases.', previewAsset: 'Photo from GFXTAB(37).jpg', isPremium: true, price: 19, tags: ['newsletter', 'email', 'mailer'] },
-]
-
-const MOCK_LOGOS = [
-  { id: 'logo-1', name: 'Minimal Geometric Logo Sign', category: 'logos', description: 'Clean outlines and modern typography brand mark.', previewAsset: 'Photo from GFXTAB(40).jpg', isPremium: false, tags: ['logo', 'identity', 'branding'] },
-  { id: 'logo-2', name: 'Luxury Monogram Emblem', category: 'logos', description: 'Gold foil crest monogram vector logo template.', previewAsset: 'Photo from GFXTAB(41).jpg', isPremium: true, price: 49, tags: ['logo', 'monogram', 'gold'] },
-]
-
-const MOCK_SOCIAL_POSTS = [
-  { id: 'social-1', name: 'Instagram Carousel Layout', category: 'social_posts', description: 'Stunning Instagram multi-slide carousel design resource.', previewAsset: 'Photo from GFXTAB(44).jpg', isPremium: false, tags: ['social', 'instagram', 'carousel'] },
-  { id: 'social-2', name: 'LinkedIn Slide Deck Template', category: 'social_posts', description: 'Professional modern slide deck presentation for thought leadership.', previewAsset: 'Photo from GFXTAB(45).jpg', isPremium: true, price: 19, tags: ['social', 'linkedin', 'slides'] },
+const CATEGORIES = [
+  'All Projects', 'Branding', 'Logo Design', 'Social Media', 'Website Design', 
+  'UI/UX', 'Motion Graphics', 'Video Editing', 'Campaign Design', 
+  'Editorial Design', 'Packaging Design', 'Case Studies'
 ]
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const { user } = useAuthStore()
-  const { favorites, toggleFavorite } = useCollectionStore()
-  const { customAssets } = useMarketplaceStore()
+  const [projects, setProjects] = useState([])
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('All Projects')
+  const [selectedProject, setSelectedProject] = useState(null)
   
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchInput, setSearchInput] = useState('') // for live typing
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'freebies')
-  const [sortBy, setSortBy] = useState('trending')
-  const [previewText, setPreviewText] = useState('Grumpy wizards make toxic brew for the evil queen')
-  const [photosAiOnly, setPhotosAiOnly] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(30)
-  
-  const [vectorsList, setVectorsList] = useState([])
-  const [fontsList, setFontsList] = useState(MOCK_FONTS)
-  const [iconsList, setIconsList] = useState([])
-  const [templatesList, setTemplatesList] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
+  // Hero Slider State
+  const [heroIndex, setHeroIndex] = useState(0)
 
   useEffect(() => {
-    setDisplayLimit(30)
-  }, [selectedCategory, searchQuery])
+    fetchPortfolioData()
+  }, [])
 
-  useEffect(() => {
-    if (location.state?.category) {
-      setSelectedCategory(location.state.category)
-    }
-  }, [location.state?.category])
-
-  // Fetch vectors dynamically from local backend if selected
-  useEffect(() => {
-    if (selectedCategory === 'vectors') {
+  const fetchPortfolioData = async () => {
+    try {
       setLoading(true)
-      setErrorMsg('')
-      fetch('http://localhost:4000/vectors/list')
-        .then((res) => {
-          if (!res.ok) throw new Error('API server returned error')
-          return res.json()
-        })
-        .then((data) => {
-          if (data.success) {
-            setVectorsList(data.vectors || [])
-          } else {
-            throw new Error(data.message || 'Failed to fetch')
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-          setErrorMsg('Failed to load local vectors directory from backend.')
-          setVectorsList([])
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [selectedCategory])
-
-  // Fonts are loaded dynamically from the static fonts_data.json list (all 3000+ fonts)
-  useEffect(() => {
-    if (selectedCategory === 'fonts') {
-      setLoading(true)
-      setErrorMsg('')
-      fetch(`${import.meta.env.BASE_URL}assets/fonts_data.json`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch fonts JSON')
-          return res.json()
-        })
-        .then((data) => {
-          setFontsList(data || [])
-        })
-        .catch((err) => {
-          console.error(err)
-          setErrorMsg('Failed to load local fonts directory from backend. Running client fallback.')
-          setFontsList(MOCK_FONTS)
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [selectedCategory])
-
-  // Track search query updates
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      trackEvent('search', { query: searchQuery, category: selectedCategory })
-    }
-  }, [searchQuery, selectedCategory])
-
-
-  // Fetch icons dynamically from local backend if selected
-  useEffect(() => {
-    if (selectedCategory === 'icons') {
-      setLoading(true)
-      setErrorMsg('')
-      fetch('http://localhost:4000/icons/list')
-        .then((res) => {
-          if (!res.ok) throw new Error('API server returned error')
-          return res.json()
-        })
-        .then((data) => {
-          if (data.success) {
-            setIconsList(data.icons || [])
-          } else {
-            throw new Error(data.message || 'Failed to fetch')
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-          setIconsList([])
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [selectedCategory])
-
-  // Fetch templates dynamically from local backend if selected
-  useEffect(() => {
-    if (selectedCategory === 'templates') {
-      setLoading(true)
-      setErrorMsg('')
-      fetch('http://localhost:4000/templates/list')
-        .then((res) => {
-          if (!res.ok) throw new Error('API server returned error')
-          return res.json()
-        })
-        .then((data) => {
-          if (data.success) {
-            setTemplatesList(data.templates || [])
-          } else {
-            throw new Error(data.message || 'Failed to fetch')
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-          setTemplatesList([])
-        })
-        .finally(() => setLoading(false))
-    }
-  }, [selectedCategory])
-
-  // Get active list to render
-  const getActiveList = () => {
-    let baseList = []
-    switch (selectedCategory) {
-      case 'web_ui':
-        baseList = []
-        break
-      case 'vectors':
-        baseList = [] // Empty — inquiry only
-        break
-      case 'fonts':
-        baseList = fontsList.length > 0 ? fontsList : MOCK_FONTS
-        break
-      case 'icons':
-        baseList = []
-        break
-      case 'photos':
-        baseList = photosAiOnly ? MOCK_PHOTOS.filter(p => p.isAi) : MOCK_PHOTOS
-        break
-      case 'png':
-        baseList = MOCK_PNG_ASSETS
-        break
-      case 'mailers':
-        baseList = MOCK_MAILERS
-        break
-      case 'mockups':
-        baseList = [] // Empty — inquiry only
-        break
-      case 'logos':
-        baseList = []
-        break
-      case 'social_posts':
-        baseList = MOCK_SOCIAL_POSTS
-        break
-      case 'freebies':
-        baseList = MOCK_FREEBIES
-        break
-      case 'artworks':
-        baseList = PRODUCTS
-        break
-      default:
-        baseList = []
-    }
-    const categoryCustoms = customAssets ? customAssets.filter(asset => asset.category === selectedCategory) : []
-    return [...categoryCustoms, ...baseList]
-  }
-
-  // All items for cross-category search
-  const getAllItems = () => [
-    ...MOCK_PHOTOS, ...MOCK_PNG_ASSETS, ...MOCK_MAILERS, ...MOCK_LOGOS,
-    ...MOCK_SOCIAL_POSTS, ...MOCK_FREEBIES, ...PRODUCTS, ...MOCK_FONTS,
-    ...(customAssets || [])
-  ]
-
-  // Live search suggestions
-  const searchSuggestions = searchInput.trim().length > 1
-    ? getAllItems().filter(item => {
-        const q = searchInput.toLowerCase()
-        return (item.name || '').toLowerCase().includes(q) ||
-               (item.tags || []).some(t => t.includes(q)) ||
-               (item.description || '').toLowerCase().includes(q)
-      }).slice(0, 8)
-    : []
-
-  // Filter & Sort list
-  const getFilteredList = () => {
-    let list = [...getActiveList()]
-
-    // 1. Smart Search Query
-    if (searchQuery.trim()) {
-      const queryWords = searchQuery.toLowerCase().trim().split(/\s+/)
-      let directMatches = list.filter(item => {
-        const name = (item.name || '').toLowerCase()
-        const desc = (item.description || '').toLowerCase()
-        const tags = (item.tags || []).map(t => t.toLowerCase())
-        return queryWords.every(word => 
-          name.includes(word) ||
-          desc.includes(word) ||
-          tags.some(t => t.includes(word))
-        )
-      })
-
-      // If category is fonts and direct matches are empty, try similarity fallback
-      if (selectedCategory === 'fonts' && directMatches.length === 0) {
-        let matchedGroups = []
-        for (const [groupName, keywords] of Object.entries(FONT_STYLE_GROUPS)) {
-          if (queryWords.some(word => 
-            groupName.includes(word) || 
-            keywords.some(kw => word.includes(kw) || kw.includes(word))
-          )) {
-            matchedGroups.push(groupName)
-          }
-        }
-
-        if (matchedGroups.length > 0) {
-          let fallbackList = list.map(item => {
-            const name = (item.name || '').toLowerCase()
-            const desc = (item.description || '').toLowerCase()
-            const tags = (item.tags || []).map(t => t.toLowerCase())
-
-            const isSimilar = matchedGroups.some(groupName => {
-              const keywords = FONT_STYLE_GROUPS[groupName]
-              return name.includes(groupName) || 
-                     tags.includes(groupName) ||
-                     keywords.some(kw => name.includes(kw) || tags.includes(kw) || desc.includes(kw))
-            })
-
-            if (isSimilar) {
-              return { ...item, isSimilarFallback: true }
-            }
-            return null
-          }).filter(Boolean)
-
-          if (fallbackList.length > 0) {
-            list = fallbackList
-          } else {
-            list = []
-          }
-        } else {
-          list = []
-        }
-      } else {
-        list = directMatches
-      }
-    }
-
-    // 2. Sorting
-    if (sortBy === 'trending') {
-      list.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
-    } else if (sortBy === 'popular') {
-      list.sort((a, b) => (b.downloads_count || b.price || 0) - (a.downloads_count || a.price || 0))
-    } else if (sortBy === 'latest') {
-      list.sort((a, b) => b.id.localeCompare(a.id))
-    }
-
-    return list
-  }
-
-  const activeList = getFilteredList()
-  const userName = user?.name || 'Creator'
-
-  const handleDownloadFont = (font) => {
-    // Fonts are completely free - no credit checks or deductions!
-    
-    // Save download history
-    useDownloadStore.getState().addDownload({
-      assetId: font.id,
-      assetName: font.name,
-      previewUrl: 'font-asset'
-    })
-    trackEvent('download', { assetId: font.id, assetName: font.name, category: 'fonts' })
-
-    const link = document.createElement('a')
-    const fontFile = font.file || `${font.id}.ttf`
-    link.href = `${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(fontFile)}`
-    link.download = fontFile
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    notify.success('Download Complete', `${font.name} has been downloaded for free.`)
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+      const [projRes, statsRes] = await Promise.all([
+        fetch('http://localhost:4000/portfolio/projects'),
+        fetch('http://localhost:4000/portfolio/stats')
+      ])
       
-      {/* Marketplace Header Hero (Centered & Attractive) */}
-      <div style={{ padding: 'var(--space-8) 0 var(--space-4)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'center' }}>
-          <h1 style={{ fontSize: 'clamp(44px, 6vw, 68px)', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <motion.span 
-              layoutId="gfxtab-title"
-              className="animated-gradient-text" 
-              style={{ textShadow: '0 0 40px rgba(99,102,241,0.2)' }}
-            >
-              GFXTAB
-            </motion.span>
-            <span style={{ fontSize: 'clamp(14px, 2.5vw, 20px)', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>
-              AI Studio & Marketplace
-            </span>
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-base)', maxWidth: 640, margin: 'var(--space-3) auto 0', lineHeight: 1.6 }}>
-            {selectedCategory === 'artworks'
-              ? "GFXTAB's official portfolio. Select any artwork to request custom modifications, sizing, or commercial deployment via WhatsApp inquiry."
-              : "The ultimate AI-powered creator ecosystem. Browse our dynamic work portfolio, submit custom inquiries, or instantly search and download assets."}
-          </p>
-        </div>
+      const projData = await projRes.json()
+      const statsData = await statsRes.json()
 
-        {/* Ultra-Smart Search Bar */}
-        <div style={{
-          display: 'flex', gap: 12, width: '100%', maxWidth: 780, marginTop: 'var(--space-6)',
-          position: 'relative', zIndex: 5, justifyContent: 'center'
-        }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--lime)', zIndex: 1 }} />
-            <input
-              type="text"
-              id="marketplace-search"
-              placeholder={`Search anything — fonts, logos, mockups, photos...`}
-              value={searchInput}
-              onChange={(e) => { setSearchInput(e.target.value); setShowSearchDropdown(true) }}
-              onFocus={() => setShowSearchDropdown(true)}
-              onBlur={() => setTimeout(() => setShowSearchDropdown(false), 180)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { setSearchQuery(searchInput); setShowSearchDropdown(false) } }}
-              style={{
-                width: '100%', padding: '16px 16px 16px 48px',
-                borderRadius: 'var(--radius-md)', background: 'var(--void-2)',
-                border: '1.5px solid', borderColor: searchInput ? 'var(--lime)' : 'var(--glass-border)',
-                color: 'var(--text-primary)', fontSize: 'var(--text-base)',
-                boxShadow: searchInput ? '0 0 16px rgba(200,255,0,0.18), var(--glow-card)' : 'var(--glow-card)',
-                transition: 'all 0.2s var(--spring)'
-              }}
-            />
-            {/* Live suggestion dropdown */}
-            {showSearchDropdown && searchSuggestions.length > 0 && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
-                background: 'var(--void-3)', border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-md)', zIndex: 50, overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
-              }}>
-                {searchSuggestions.map(item => (
-                  <button key={item.id} onMouseDown={() => {
-                    setSearchInput(item.name)
-                    setSearchQuery(item.name)
-                    setShowSearchDropdown(false)
-                    if (item.category) setSelectedCategory(item.category)
-                  }} style={{
-                    width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none',
-                    border: 'none', borderBottom: '1px solid var(--glass-border)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-primary)'
-                  }}>
-                    <Search size={14} style={{ color: 'var(--lime)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{item.name}</span>
-                    <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{(item.category || '').replace('_', ' ')}</span>
-                  </button>
+      if (projData.success) setProjects(projData.projects)
+      if (statsData.success) setStats(statsData.stats)
+    } catch (err) {
+      console.error(err)
+      notify.error('Failed to load portfolio ecosystem.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Auto-slide Hero
+  useEffect(() => {
+    if (projects.length === 0 || selectedProject) return
+    const timer = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % Math.min(projects.length, 5))
+    }, 6000)
+    return () => clearInterval(timer)
+  }, [projects, selectedProject])
+
+  const filteredProjects = activeCategory === 'All Projects' 
+    ? projects 
+    : projects.filter(p => p.category === activeCategory)
+
+  // Featured Projects for Hero Slider
+  const featuredProjects = projects.slice(0, 5)
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <div className="spin" style={{ width: 40, height: 40, border: '3px solid var(--lime)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+      </div>
+    )
+  }
+
+  // --- Render Detail Modal (Case Study) ---
+  if (selectedProject) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
+          style={{ paddingBottom: 'var(--space-16)' }}
+        >
+          {/* Back Button */}
+          <button 
+            onClick={() => setSelectedProject(null)}
+            style={{ 
+              background: 'var(--void-3)', border: '1px solid var(--glass-border)',
+              color: 'var(--text-primary)', padding: '10px 16px', borderRadius: 'var(--radius-full)',
+              display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 'var(--space-6)',
+              fontSize: 'var(--text-sm)', fontWeight: 600
+            }}
+            className="hover-card"
+          >
+            <ChevronLeft size={16} /> Back to Portfolio
+          </button>
+
+          {/* Hero Banner */}
+          <div style={{ 
+            width: '100%', height: '50vh', minHeight: 400, borderRadius: 'var(--radius-xl)',
+            overflow: 'hidden', position: 'relative', marginBottom: 'var(--space-8)'
+          }}>
+            <img src={`${import.meta.env.BASE_URL}assets/IMG/${selectedProject.coverImage}`} alt={selectedProject.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #090910, transparent)' }} />
+            
+            <div style={{ position: 'absolute', bottom: 40, left: 40 }}>
+              <span style={{ color: 'var(--lime)', fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                {selectedProject.category}
+              </span>
+              <h1 style={{ fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 800, marginTop: 8, fontFamily: 'var(--font-display)' }}>
+                {selectedProject.title}
+              </h1>
+            </div>
+          </div>
+
+          {/* Case Study Meta */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-6)', marginBottom: 'var(--space-12)' }}>
+            <GlassCard style={{ padding: 24 }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Client</span>
+              <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{selectedProject.client}</div>
+            </GlassCard>
+            <GlassCard style={{ padding: 24 }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Year</span>
+              <div style={{ fontSize: 18, fontWeight: 600, marginTop: 4 }}>{selectedProject.year}</div>
+            </GlassCard>
+            <GlassCard style={{ padding: 24 }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tools Used</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                {selectedProject.tools.map(t => (
+                  <span key={t} style={{ background: 'var(--void-3)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: 11, color: 'var(--lime)' }}>
+                    {t}
+                  </span>
                 ))}
               </div>
-            )}
-          </div>
-          {/* Search Button */}
-          <button
-            onClick={() => { setSearchQuery(searchInput); setShowSearchDropdown(false) }}
-            style={{
-              padding: '0 20px', borderRadius: 'var(--radius-md)',
-              background: 'var(--void-3)', border: '1.5px solid var(--glass-border)',
-              color: 'var(--text-primary)', fontSize: 'var(--text-sm)', fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-              transition: 'all 0.2s', whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--lime)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--glass-border)'}
-          >
-            <Search size={15} /> Search
-          </button>
-          <GlowButton onClick={() => navigate('/ai-studio')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px', whiteSpace: 'nowrap' }}>
-            <Sparkles size={16} /> GFXTAB AI Generator
-          </GlowButton>
-        </div>
-      </div>
-
-      {/* Centered Categories Switcher */}
-      <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 12, justifyContent: 'flex-start', width: '100%' }}>
-        {[
-          { id: 'freebies', label: 'Freebies (Weekly)' },
-          { id: 'web_ui', label: 'Web & UI' },
-          { id: 'fonts', label: 'Fonts' },
-          { id: 'vectors', label: 'Vectors (EPS)' },
-          { id: 'icons', label: 'Icons' },
-          { id: 'photos', label: 'Photos & Images' },
-          { id: 'png', label: 'PNG Assets' },
-          { id: 'mailers', label: 'Mailers & Invites' },
-          { id: 'mockups', label: 'Mockups' },
-          { id: 'logos', label: 'Logos' },
-          { id: 'social_posts', label: 'Social Media Posts' },
-          { id: 'artworks', label: 'Our Artworks' }
-        ].map((cat) => (
-          <motion.button
-            key={cat.id}
-            onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); setSearchInput('') }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              padding: '10px 18px', borderRadius: 'var(--radius-full)',
-              background: selectedCategory === cat.id ? 'rgba(200, 255, 0, 0.15)' : 'var(--void-3)',
-              border: '1.5px solid', borderColor: selectedCategory === cat.id ? 'var(--lime)' : 'rgba(255,255,255,0.1)',
-              color: selectedCategory === cat.id ? 'var(--lime)' : '#e4e4e7',
-              fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 8,
-              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s var(--spring)',
-              boxShadow: selectedCategory === cat.id ? '0 0 18px rgba(200, 255, 0, 0.35), inset 0 0 8px rgba(200,255,0,0.05)' : 'none',
-              fontWeight: selectedCategory === cat.id ? 600 : 400
-            }}
-          >
-            {cat.label}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Sorting Sub-filters */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-3)', borderBottom: '1px solid var(--glass-border)', paddingBottom: 'var(--space-3)' }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[
-              { id: 'trending', label: 'Trending' },
-              { id: 'popular', label: 'Popular' },
-              { id: 'latest', label: 'Latest' }
-            ].map(sort => (
-              <button
-                key={sort.id}
-                onClick={() => setSortBy(sort.id)}
-                style={{
-                  background: 'none', border: 'none',
-                  color: sortBy === sort.id ? 'var(--text-primary)' : 'var(--text-dim)',
-                  fontSize: 'var(--text-sm)', fontWeight: sortBy === sort.id ? 600 : 400,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
-                }}
-              >
-                {sortBy === sort.id && <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--lime)' }} />}
-                {sort.label}
-              </button>
-            ))}
+            </GlassCard>
+            <GlassCard style={{ padding: 24 }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Behance</span>
+              <div style={{ marginTop: 8 }}>
+                <a href={selectedProject.behanceUrl} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
+                  View Full Case Study <ExternalLink size={14} color="var(--lime)" />
+                </a>
+              </div>
+            </GlassCard>
           </div>
 
-          {/* AI Generated Toggle for Photos */}
-          {selectedCategory === 'photos' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderLeft: '1px solid var(--glass-border)', paddingLeft: 16 }}>
-              <span style={{ fontSize: 'var(--text-sm)', color: '#e4e4e7' }}>AI Generated Only</span>
-              <button
-                type="button"
-                onClick={() => setPhotosAiOnly(!photosAiOnly)}
-                style={{
-                  width: 40, height: 20, borderRadius: 10,
-                  background: photosAiOnly ? 'var(--lime)' : 'rgba(255,255,255,0.1)',
-                  position: 'relative', border: 'none', cursor: 'pointer',
-                  transition: 'background 0.2s',
-                }}
-              >
-                <motion.div
-                  animate={{ x: photosAiOnly ? 22 : 2 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  style={{ width: 14, height: 14, borderRadius: 7, background: photosAiOnly ? '#020208' : '#888', position: 'absolute', top: 3 }}
-                />
-              </button>
-            </div>
-          )}
-        </div>
-        
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <SlidersHorizontal size={12} /> Sorting by {sortBy}
-        </span>
-      </div>
-
-      {/* AI Generate Button row for applicable categories */}
-      {['photos', 'png', 'icons', 'logos', 'mailers', 'social_posts', 'web_ui'].includes(selectedCategory) && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8 }}>
-          <GlowButton onClick={() => navigate('/ai-studio')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', fontSize: 'var(--text-sm)' }}>
-            <Sparkles size={14} /> AI Generate {selectedCategory.replace('_', ' ')}
-          </GlowButton>
-        </div>
-      )}
-
-      {/* Font Tester Text Input */}
-      {selectedCategory === 'fonts' && fontsList.length > 0 && (
-        <GlassCard style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.08em' }}>
-              Type to test fonts (Real-time Preview)
-            </label>
-            <input
-              type="text"
-              value={previewText}
-              onChange={(e) => setPreviewText(e.target.value)}
-              placeholder="Type custom text to preview your typefaces..."
-              style={{
-                width: '100%', padding: '14px var(--space-4)', borderRadius: 'var(--radius-md)',
-                background: 'var(--void-2)', border: '1px solid var(--glass-border)',
-                color: 'var(--text-primary)', fontSize: 'var(--text-md)',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
-              }}
-            />
+          {/* Overview */}
+          <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 'var(--space-16)' }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Project Overview</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 18, lineHeight: 1.6 }}>{selectedProject.overview}</p>
           </div>
-        </GlassCard>
-      )}
 
-      {/* Dynamic font-face style tags injection */}
-      {selectedCategory === 'fonts' && activeList.length > 0 && (
-        <style>{`
-          ${activeList.slice(0, displayLimit).map(f => `
-            @font-face {
-              font-family: "${f.id}";
-              src: url("${import.meta.env.BASE_URL}assets/FONT/${encodeURIComponent(f.file || (f.id + '.ttf'))}") format("${(f.file || f.id).toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype'}");
-            }
-          `).join('\n')}
-        `}</style>
-      )}
-
-      {/* Social Media Posts Subscription Plans */}
-      {selectedCategory === 'social_posts' && (
-        <div style={{ marginBottom: 'var(--space-8)' }}>
-          <h2 style={{ fontSize: 'var(--text-lg)', textAlign: 'center', marginBottom: 'var(--space-6)', fontFamily: 'var(--font-display)' }}>
-            GFXTAB Social Media Design Subscriptions
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-4)' }}>
-            {[
-              { title: 'Starter Plan', price: '₹2,499', period: 'month', posts: '15 Custom Posts', features: ['High-contrast designs', 'Source files included', '2 Revision cycles', '48-hour delivery'] },
-              { title: 'Growth Plan', price: '₹11,999', period: 'month', posts: '30 Custom Posts', features: ['Custom illustrations/infographics', 'Brand consistency matching', 'Unlimited revisions', 'Dedicated designer chat', 'Content calendar assistance'], popular: true },
-              { title: 'Elite Plan', price: '₹24,999', period: 'month', posts: '60 Custom Posts', features: ['Priority 24h delivery', 'Custom video animations', 'Unlimited design assets', 'Full social media branding suite', 'Weekly strategy syncs'] }
-            ].map((plan, i) => (
-              <GlassCard key={i} style={{ padding: 'var(--space-5)', border: plan.popular ? '1px solid var(--lime)' : '1px solid var(--glass-border)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                {plan.popular && (
-                  <span style={{ position: 'absolute', top: 12, right: 12, background: 'var(--lime)', color: '#020208', fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)', textTransform: 'uppercase' }}>
-                    Most Popular
-                  </span>
-                )}
-                <h3 style={{ fontSize: 'var(--text-md)', marginBottom: 8 }}>{plan.title}</h3>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--lime)', fontWeight: 600, marginBottom: 12 }}>{plan.posts}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 'var(--space-4)' }}>
-                  <span style={{ fontSize: 'var(--text-2xl)', fontWeight: 800 }}>{plan.price}</span>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>/month</span>
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-5) 0', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-                  {plan.features.map((feat, idx) => (
-                    <li key={idx} style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: 'var(--lime)' }}>✓</span> {feat}
-                    </li>
-                  ))}
-                </ul>
-                <GlowButton onClick={() => navigate('/contact', { state: { subject: `Social Media Design: ${plan.title}` } })} style={{ width: '100%', justifyContent: 'center' }}>
-                  Subscribe Now
-                </GlowButton>
+          {/* Gallery - Masonry / Grid depending on type */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: selectedProject.type === 'masonry' ? 'repeat(auto-fit, minmax(400px, 1fr))' : '1fr',
+            gap: 'var(--space-6)'
+          }}>
+            {selectedProject.gallery.map((media, idx) => (
+              <GlassCard key={idx} style={{ overflow: 'hidden', padding: 0, border: 'none', borderRadius: 'var(--radius-lg)' }}>
+                {media.type === 'image' ? (
+                  <img src={`${import.meta.env.BASE_URL}assets/IMG/${media.url}`} style={{ width: '100%', height: 'auto', display: 'block' }} alt="Gallery Item" />
+                ) : null}
               </GlassCard>
             ))}
           </div>
+
+          {/* Impact Stats */}
+          {selectedProject.stats && selectedProject.stats.length > 0 && (
+            <div style={{ marginTop: 'var(--space-16)' }}>
+              <h3 style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>Project Impact</h3>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-8)', flexWrap: 'wrap' }}>
+                {selectedProject.stats.map(s => (
+                  <div key={s.label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 48, fontWeight: 800, color: 'var(--lime)', fontFamily: 'var(--font-display)' }}>{s.value}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </motion.div>
+      </AnimatePresence>
+    )
+  }
+
+  // --- Main Portfolio View ---
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)', paddingBottom: 'var(--space-16)' }}>
+      
+      {/* Portfolio Stats Dashboard */}
+      {stats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
+          <GlassCard style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(200,255,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FolderGit2 color="var(--lime)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{stats.totalProjects}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Projects</div>
+            </div>
+          </GlassCard>
+          
+          <GlassCard style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(200,255,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Star color="var(--lime)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{stats.yearsExperience}+</div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Years Experience</div>
+            </div>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(200,255,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Target color="var(--lime)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{stats.brandIdentities}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brand Identities</div>
+            </div>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(200,255,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity color="var(--lime)" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{stats.globalClients}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Global Clients</div>
+            </div>
+          </GlassCard>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', width: '100%' }}>
-        <div style={{ flex: 1, minWidth: 300 }}>
+
+      {/* Featured Hero Slider */}
+      {featuredProjects.length > 0 && (
+        <div style={{ position: 'relative', width: '100%', height: 450, borderRadius: 'var(--radius-2xl)', overflow: 'hidden' }}>
           <AnimatePresence mode="wait">
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-16)' }}>
-                <RefreshCw className="spin" size={32} color="var(--lime)" style={{ margin: '0 auto var(--space-4)' }} />
-                <p style={{ color: 'var(--text-dim)' }}>Scanning and loading local assets catalog...</p>
+            <motion.div
+              key={heroIndex}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              style={{ position: 'absolute', inset: 0 }}
+            >
+              <img 
+                src={`${import.meta.env.BASE_URL}assets/IMG/${featuredProjects[heroIndex].coverImage}`} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, #090910 10%, rgba(9,9,16,0.6) 50%, transparent)' }} />
+              
+              <div style={{ position: 'absolute', bottom: 60, left: 60, maxWidth: 600 }}>
+                <span style={{ 
+                  background: 'var(--lime)', color: '#000', padding: '4px 12px', 
+                  borderRadius: 'var(--radius-full)', fontSize: 12, fontWeight: 800, textTransform: 'uppercase' 
+                }}>
+                  {featuredProjects[heroIndex].category}
+                </span>
+                <h1 style={{ fontSize: 'clamp(36px, 4vw, 56px)', fontWeight: 800, marginTop: 16, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                  {featuredProjects[heroIndex].title}
+                </h1>
+                <p style={{ color: '#d4d4d8', fontSize: 16, marginTop: 16, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {featuredProjects[heroIndex].overview}
+                </p>
+                <div style={{ marginTop: 24 }}>
+                  <GlowButton onClick={() => setSelectedProject(featuredProjects[heroIndex])}>
+                    View Case Study <ArrowRight size={16} />
+                  </GlowButton>
+                </div>
               </div>
-            ) : activeList.length === 0 ? (
-              (() => {
-                const categoryMeta = {
-                  web_ui: {
-                    title: 'No SaaS Layouts Stocked Yet',
-                    desc: 'Currently, there are no pre-made Web & UI presentation templates listed. You can submit a custom brief to GFXTAB to generate one for you.',
-                    btn: 'Submit custom UI inquiry',
-                    icon: '🖥️'
-                  },
-                  vectors: {
-                    title: 'No Mockup Templates',
-                    desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
-                    btn: 'Inquire for Mockup design',
-                    icon: '📐'
-                  },
-                  icons: {
-                    title: 'No Icons Pack Uploaded Yet',
-                    desc: 'Our premium custom design icons library is empty. Submit a subject brief to get custom icons built.',
-                    btn: 'Inquire for custom icon set',
-                    icon: '✨'
-                  },
-                  photos: {
-                    title: 'No Photos & Images Uploaded Yet',
-                    desc: 'Commercial photo listings and stock images are currently empty. You can request custom photography or AI image rendering.',
-                    btn: 'Inquire for stock photography',
-                    icon: '📷'
-                  },
-                  mailers: {
-                    title: 'No Newsletter Templates',
-                    desc: 'There are no active mailers or invitation layout templates available in this section. Custom newsletters can be requested.',
-                    btn: 'Request custom newsletter layout',
-                    icon: '✉️'
-                  },
-                  logos: {
-                    title: 'No Brand Logo Templates',
-                    desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
-                    btn: 'Inquire for Mockup design',
-                    icon: '🪪'
-                  }
-                }[selectedCategory] || {
-                  title: 'No items found',
-                  desc: 'No design assets found matching your search term or active filters. Try searching for something else.',
-                  btn: 'Reset Filters & Search',
-                  action: () => { setSearchQuery(''); setSortBy('trending'); },
-                  icon: '🔍'
-                }
-
-                const actionHandler = categoryMeta.action || (() => navigate('/contact', { state: { subject: `Inquiry for ${selectedCategory.replace('_', ' ')}` } }));
-
-                return (
-                  <GlassCard style={{ padding: 'var(--space-12)', textAlign: 'center', maxWidth: 640, margin: '0 auto', border: '1px dashed rgba(200, 255, 0, 0.25)' }}>
-                    <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-4)' }}>{categoryMeta.icon}</div>
-                    <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 8, color: '#ffffff', fontFamily: 'var(--font-display)' }}>{categoryMeta.title}</h3>
-                    <p style={{ color: 'var(--text-dim)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)', maxWidth: 480, margin: '0 auto var(--space-6)', lineHeight: 1.6 }}>{categoryMeta.desc}</p>
-                    <GlowButton onClick={actionHandler}>
-                      {categoryMeta.btn}
-                    </GlowButton>
-                  </GlassCard>
-                )
-              })()
-            ) : selectedCategory === 'fonts' ? (
-              /* Premium Fonts Row list (No Images, Google Fonts Style) */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', width: '100%' }}>
-                <motion.div
-                  key={`${selectedCategory}-${sortBy}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', width: '100%' }}
-                >
-                  {activeList.slice(0, displayLimit).map((p) => {
-                    const isFav = favorites.includes(p.id)
-                    return (
-                      <GlassCard 
-                        key={p.id}
-                        onClick={() => navigate(`/mockup/${p.id}`, { state: { assetType: selectedCategory } })}
-                        style={{
-                          padding: 'var(--space-5) var(--space-6)',
-                          cursor: 'pointer',
-                          display: 'grid',
-                          gridTemplateColumns: '240px 1fr',
-                          gap: 'var(--space-6)',
-                          alignItems: 'center',
-                          position: 'relative'
-                        }}
-                      >
-                        {/* Left Column: Metadata & Actions */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderRight: '1px solid var(--glass-border)', paddingRight: 'var(--space-6)' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                              <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{p.name}</h3>
-                              {p.isSimilarFallback && (
-                                <span style={{
-                                  background: 'rgba(200, 255, 0, 0.15)',
-                                  border: '1.5px solid var(--lime)',
-                                  color: 'var(--lime)',
-                                  fontSize: '9px',
-                                  fontWeight: 700,
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
-                                  boxShadow: '0 0 10px rgba(200, 255, 0, 0.25)'
-                                }}>
-                                  Similar
-                                </span>
-                              )}
-                            </div>
-                            <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || 'Free TTF/OTF'}</span>
-                          </div>
-
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <GlowButton 
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); handleDownloadFont(p); }} 
-                              style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, justifyContent: 'center' }}
-                            >
-                              <Download size={12} /> Download Font
-                            </GlowButton>
-                            
-                            <button
-                              onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                              style={{
-                                width: 32, height: 32, borderRadius: '50%',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid var(--glass-border)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', color: isFav ? 'var(--red)' : 'var(--text-dim)',
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              <Heart size={14} fill={isFav ? 'var(--red)' : 'none'} color={isFav ? 'var(--red)' : 'currentColor'} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Right Column: Live Typography preview */}
-                        <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', minHeight: 64 }}>
-                          <span style={{
-                            fontFamily: `"${p.id}"`,
-                            fontSize: 'clamp(20px, 3.5vw, 42px)',
-                            color: 'var(--text-primary)',
-                            whiteSpace: 'nowrap',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            width: '100%',
-                            paddingLeft: 'var(--space-2)'
-                          }}>
-                            {previewText || p.name}
-                          </span>
-                        </div>
-                      </GlassCard>
-                    )
-                  })}
-                </motion.div>
-                
-                {activeList.length > displayLimit && (
-                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-4)', paddingBottom: 'var(--space-8)' }}>
-                    <GlowButton onClick={() => setDisplayLimit(limit => limit + 30)}>
-                      Load More Fonts (+{activeList.length - displayLimit} remaining)
-                    </GlowButton>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Mockups grid layout (Other works) */
-              <motion.div
-                key={`${selectedCategory}-${sortBy}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-6)' }}
-              >
-                {activeList.map((p) => {
-                  const isFav = favorites.includes(p.id)
-                  const preview = p.previewAsset && (p.previewAsset.startsWith('data:') || p.previewAsset.startsWith('http'))
-                    ? p.previewAsset
-                    : (p.previewAsset ? `${import.meta.env.BASE_URL}assets/${p.previewAsset}` : `${import.meta.env.BASE_URL}assets/Artboard 1.jpg`)
-                  
-                  return (
-                    <GlassCard 
-                      key={p.id}
-                      onClick={() => navigate(`/mockup/${p.id}`, { state: { assetType: selectedCategory, assetData: p } })}
-                      style={{ overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column', position: 'relative' }}
-                    >
-                      {p.isAi && (
-                        <span style={{
-                          position: 'absolute', top: 12, left: 12, zIndex: 10,
-                          background: 'rgba(200, 255, 0, 0.2)', backdropFilter: 'blur(8px)',
-                          border: '1px solid var(--lime)', color: 'var(--lime)',
-                          fontSize: '9px', fontWeight: 700, padding: '2px 8px',
-                          borderRadius: 'var(--radius-full)', textTransform: 'uppercase'
-                        }}>
-                          AI Generated
-                        </span>
-                      )}
-
-                      {/* Favorite button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                        style={{
-                          position: 'absolute', top: 12, right: 12, zIndex: 10,
-                          width: 28, height: 28, borderRadius: '50%',
-                          background: 'rgba(2,2,8,0.7)', backdropFilter: 'blur(8px)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: isFav ? 'var(--red)' : 'var(--text-dim)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.3)', transition: 'all 0.2s'
-                        }}
-                      >
-                        <Heart size={14} fill={isFav ? 'var(--red)' : 'none'} color={isFav ? 'var(--red)' : 'currentColor'} />
-                      </button>
-
-                      <div style={{ aspectRatio: '4/3', overflow: 'hidden', background: 'var(--void-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                        {selectedCategory === 'vectors' || (p.previewAsset && p.previewAsset.startsWith('vector-svg')) ? (
-                          <div style={{
-                            width: '100%', height: '100%', 
-                            background: 'linear-gradient(135deg, var(--void-3), #121216)', 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                            position: 'relative', overflow: 'hidden'
-                          }}>
-                            <div style={{
-                              position: 'absolute', inset: 0,
-                              background: `radial-gradient(circle at ${(p.id.charCodeAt(0) || 50) % 100}% ${(p.id.charCodeAt(1) || 50) % 100}%, rgba(200, 255, 0, 0.12), transparent 70%)`
-                            }} />
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 10px rgba(200, 255, 0, 0.5))', position: 'relative', zIndex: 2 }}>
-                              {((p.id.charCodeAt(0) || 0) % 4) === 0 ? (
-                                <>
-                                  <circle cx="12" cy="12" r="10" />
-                                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                                </>
-                              ) : ((p.id.charCodeAt(0) || 0) % 4) === 1 ? (
-                                <>
-                                  <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
-                                  <line x1="12" y1="22" x2="12" y2="15.5" />
-                                  <polyline points="22 8.5 12 15.5 2 8.5" />
-                                  <polyline points="2 15.5 12 8.5 22 15.5" />
-                                </>
-                              ) : ((p.id.charCodeAt(0) || 0) % 4) === 2 ? (
-                                <>
-                                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                                </>
-                              ) : (
-                                <>
-                                  <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                                  <path d="M12 6v6l4 2" />
-                                </>
-                              )}
-                            </svg>
-                          </div>
-                        ) : (
-                          <img 
-                            src={preview} 
-                            alt={p.name} 
-                            loading="lazy"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        )}
-                      </div>
-
-                      {/* Text Details */}
-                      <div style={{ padding: 'var(--space-4)', flex: 1, display: 'flex', flexDirection: 'column', justify: 'between' }}>
-                        <div>
-                          <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.name}</h3>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', lineClamp: 2, overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>{p.description}</p>
-                        </div>
-                        
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 'var(--space-2)' }}>
-                          <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || p.category}</span>
-                          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: p.isPremium ? 'var(--lime)' : 'var(--text-secondary)' }}>
-                            {p.isPremium ? `₹${p.price}` : 'Free'}
-                          </span>
-                        </div>
-                      </div>
-                    </GlassCard>
-                  )
-                })}
-              </motion.div>
-            )}
+            </motion.div>
           </AnimatePresence>
-        </div>
 
-        {searchQuery.trim() !== '' && (
-          <div style={{
-            width: 310, minWidth: 310,
-            background: 'var(--glass)', border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-lg)', padding: 'var(--space-5)',
-            boxShadow: 'var(--glow-card)', display: 'flex', flexDirection: 'column', gap: 16,
-            position: 'sticky', top: 96
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 10 }}>
-              <span style={{ fontSize: '1.2rem' }}>🔍</span>
-              <div>
-                <h4 style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Web Search Insights</h4>
-                <span style={{ fontSize: 9, color: 'var(--lime)', fontWeight: 600, letterSpacing: '0.05em' }}>AI REFERENCE MATRIX</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>Google Fonts Matches</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { name: 'Inter Typeface', url: 'https://fonts.google.com/specimen/Inter', desc: 'Highly legible geometric UI font.' },
-                  { name: 'Outfit Display', url: 'https://fonts.google.com/specimen/Outfit', desc: 'Elegant circular display font.' },
-                  { name: 'Syne Sans', url: 'https://fonts.google.com/specimen/Syne', desc: 'Artistic expressive display typeface.' }
-                ].map((f, idx) => (
-                  <a key={idx} href={f.url} target="_blank" rel="noopener noreferrer" style={{
-                    padding: '8px 12px', background: 'var(--void-3)', borderRadius: 'var(--radius-sm)',
-                    border: '1px solid rgba(255,255,255,0.04)', display: 'block', textDecoration: 'none',
-                    transition: 'all 0.2s'
-                  }}>
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--lime)' }}>{f.name} ↗</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{f.desc}</div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600 }}>External Design References</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { name: 'Fonts In Use', url: 'https://fontsinuse.com', desc: 'Real-world typeface application archive.' },
-                  { name: 'Typewolf Typography', url: 'https://www.typewolf.com', desc: 'Independent typography style guide.' },
-                  { name: 'SVGRepo Search', url: `https://www.svgrepo.com/vectors/${encodeURIComponent(searchQuery)}`, desc: 'Find matching raw SVG vectors.' }
-                ].map((r, idx) => (
-                  <a key={idx} href={r.url} target="_blank" rel="noopener noreferrer" style={{
-                    padding: '8px 12px', background: 'var(--void-3)', borderRadius: 'var(--radius-sm)',
-                    border: '1px solid rgba(255,255,255,0.04)', display: 'block', textDecoration: 'none',
-                    transition: 'all 0.2s'
-                  }}>
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ffffff' }}>{r.name} ↗</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-secondary)', marginTop: 2 }}>{r.desc}</div>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginTop: 'var(--space-2)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-              <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: 4 }}>Design Tip</span>
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                For search term <strong style={{ color: 'var(--lime)' }}>"{searchQuery}"</strong>, pairing structured sans-serif typefaces with high-contrast vector composition delivers clean, modern brand aesthetics.
-              </p>
-            </div>
+          {/* Slider Controls */}
+          <div style={{ position: 'absolute', bottom: 30, right: 40, display: 'flex', gap: 12 }}>
+            <button 
+              onClick={() => setHeroIndex(prev => prev === 0 ? featuredProjects.length - 1 : prev - 1)}
+              style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button 
+              onClick={() => setHeroIndex(prev => (prev + 1) % featuredProjects.length)}
+              style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Categories Filter Tabs */}
+      <div style={{ 
+        display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, 
+        scrollbarWidth: 'none', msOverflowStyle: 'none'
+      }}>
+        {CATEGORIES.map(cat => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            style={{
+              padding: '10px 20px', borderRadius: 'var(--radius-full)', whiteSpace: 'nowrap',
+              background: activeCategory === cat ? 'var(--lime)' : 'var(--void-3)',
+              color: activeCategory === cat ? '#000' : 'var(--text-secondary)',
+              fontWeight: activeCategory === cat ? 700 : 500,
+              fontSize: 'var(--text-sm)', border: '1px solid',
+              borderColor: activeCategory === cat ? 'var(--lime)' : 'var(--glass-border)',
+              cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
-      
-      {/* Platform Brand Footer */}
-      <div style={{ textAlign: 'center', marginTop: 'var(--space-12)', padding: 'var(--space-6) 0', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>
-          GFXTAB AI Studio & Marketplace © 2026. Production Version.
-        </p>
+
+      {/* Masonry Grid Projects */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+        gap: 'var(--space-6)' 
+      }}>
+        <AnimatePresence>
+          {filteredProjects.map((project, idx) => (
+            <motion.div
+              key={project.id}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, delay: idx * 0.05 }}
+              onClick={() => setSelectedProject(project)}
+            >
+              <GlassCard 
+                className="hover-card group" 
+                style={{ 
+                  padding: 0, overflow: 'hidden', cursor: 'pointer', 
+                  display: 'flex', flexDirection: 'column', height: '100%',
+                  border: '1px solid var(--glass-border)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                {/* Image Wrapper */}
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
+                  <img 
+                    src={`${import.meta.env.BASE_URL}assets/IMG/${project.coverImage}`} 
+                    style={{ 
+                      width: '100%', height: '100%', objectFit: 'cover', 
+                      transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)' 
+                    }}
+                    className="group-hover-zoom"
+                    alt={project.title}
+                  />
+                  {/* Hover Overlay */}
+                  <div 
+                    className="group-hover-overlay"
+                    style={{ 
+                      position: 'absolute', inset: 0, background: 'rgba(9,9,16,0.5)', 
+                      opacity: 0, transition: 'opacity 0.3s', display: 'flex', 
+                      alignItems: 'center', justifyContent: 'center' 
+                    }}
+                  >
+                    <div style={{ 
+                      background: 'var(--lime)', color: '#000', width: 50, height: 50, 
+                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transform: 'translateY(20px)', transition: 'all 0.3s', className: 'group-hover-icon'
+                    }}>
+                      <Eye size={24} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Details */}
+                <div style={{ padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ color: 'var(--lime)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {project.category}
+                    </span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>{project.year}</span>
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, fontFamily: 'var(--font-display)' }}>
+                    {project.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {project.overview}
+                  </p>
+                </div>
+              </GlassCard>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
     </div>
   )
 }
+
+// Add CSS to index.css or a style tag for hover effects
+// .group:hover .group-hover-zoom { transform: scale(1.05); }
+// .group:hover .group-hover-overlay { opacity: 1; }
+// .group:hover .group-hover-icon { transform: translateY(0); }
+// .group:hover { border-color: rgba(200, 255, 0, 0.5) !important; box-shadow: 0 10px 40px -10px rgba(200, 255, 0, 0.2); }

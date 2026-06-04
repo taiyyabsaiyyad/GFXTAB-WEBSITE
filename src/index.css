@@ -549,3 +549,18 @@ input:focus, textarea:focus {
   -ms-overflow-style: none !important;  /* IE and Edge */
   scrollbar-width: none !important;  /* Firefox */
 }
+
+/* Portfolio Hover Effects */
+.group:hover .group-hover-zoom { 
+  transform: scale(1.05); 
+}
+.group:hover .group-hover-overlay { 
+  opacity: 1 !important; 
+}
+.group:hover .group-hover-icon { 
+  transform: translateY(0) !important; 
+}
+.group:hover { 
+  border-color: rgba(200, 255, 0, 0.5) !important; 
+  box-shadow: 0 10px 40px -10px rgba(200, 255, 0, 0.2) !important; 
+}
