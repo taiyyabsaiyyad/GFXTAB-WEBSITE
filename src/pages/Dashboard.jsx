@@ -7,6 +7,14 @@ import { GlassCard } from '@/components/ui/Card.jsx'
 import { PRODUCTS, MOCK_FREEBIES } from '@/constants/products.js'
 import { useAuthStore, useCollectionStore, useDownloadStore, useMarketplaceStore } from '@/store/index.js'
 import { notify } from '@/components/ui/Toast.jsx'
+import { trackEvent } from '@/utils/tracker.js'
+
+const FONT_STYLE_GROUPS = {
+  sans: ['sans', 'grotesk', 'clean', 'modern', 'geometric', 'gothic', 'round', 'neo', 'tech'],
+  serif: ['serif', 'slab', 'roman', 'classic', 'elegant', 'editorial', 'vintage', 'newspaper', 'retro'],
+  script: ['script', 'signature', 'handwritten', 'cursive', 'brush', 'calligraphy', 'hand', 'comic'],
+  display: ['display', 'bold', 'heavy', 'black', 'retro', 'futuristic', 'cyberpunk', 'cartoon', 'comic', 'fancy', 'decorative', 'poster']
+}
 
 const MOCK_FONTS = [
   { id: 'font-clash', name: 'Clash Display Font', category: 'fonts', description: 'Bold, premium display typography for branding layouts.', previewAsset: 'Photo from GFXTAB(17).jpg', isPremium: false, price: 0, tags: ['typography', 'display', 'sans'] },
@@ -70,7 +78,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('') // for live typing
   const [showSearchDropdown, setShowSearchDropdown] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'web_ui')
+  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'freebies')
   const [sortBy, setSortBy] = useState('trending')
   const [previewText, setPreviewText] = useState('Grumpy wizards make toxic brew for the evil queen')
   const [photosAiOnly, setPhotosAiOnly] = useState(false)
@@ -140,6 +148,13 @@ export default function Dashboard() {
         .finally(() => setLoading(false))
     }
   }, [selectedCategory])
+
+  // Track search query updates
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      trackEvent('search', { query: searchQuery, category: selectedCategory })
+    }
+  }, [searchQuery, selectedCategory])
 
 
   // Fetch icons dynamically from local backend if selected
@@ -263,7 +278,7 @@ export default function Dashboard() {
     // 1. Smart Search Query
     if (searchQuery.trim()) {
       const queryWords = searchQuery.toLowerCase().trim().split(/\s+/)
-      list = list.filter(item => {
+      let directMatches = list.filter(item => {
         const name = (item.name || '').toLowerCase()
         const desc = (item.description || '').toLowerCase()
         const tags = (item.tags || []).map(t => t.toLowerCase())
@@ -273,6 +288,49 @@ export default function Dashboard() {
           tags.some(t => t.includes(word))
         )
       })
+
+      // If category is fonts and direct matches are empty, try similarity fallback
+      if (selectedCategory === 'fonts' && directMatches.length === 0) {
+        let matchedGroups = []
+        for (const [groupName, keywords] of Object.entries(FONT_STYLE_GROUPS)) {
+          if (queryWords.some(word => 
+            groupName.includes(word) || 
+            keywords.some(kw => word.includes(kw) || kw.includes(word))
+          )) {
+            matchedGroups.push(groupName)
+          }
+        }
+
+        if (matchedGroups.length > 0) {
+          let fallbackList = list.map(item => {
+            const name = (item.name || '').toLowerCase()
+            const desc = (item.description || '').toLowerCase()
+            const tags = (item.tags || []).map(t => t.toLowerCase())
+
+            const isSimilar = matchedGroups.some(groupName => {
+              const keywords = FONT_STYLE_GROUPS[groupName]
+              return name.includes(groupName) || 
+                     tags.includes(groupName) ||
+                     keywords.some(kw => name.includes(kw) || tags.includes(kw) || desc.includes(kw))
+            })
+
+            if (isSimilar) {
+              return { ...item, isSimilarFallback: true }
+            }
+            return null
+          }).filter(Boolean)
+
+          if (fallbackList.length > 0) {
+            list = fallbackList
+          } else {
+            list = []
+          }
+        } else {
+          list = []
+        }
+      } else {
+        list = directMatches
+      }
     }
 
     // 2. Sorting
@@ -299,6 +357,7 @@ export default function Dashboard() {
       assetName: font.name,
       previewUrl: 'font-asset'
     })
+    trackEvent('download', { assetId: font.id, assetName: font.name, category: 'fonts' })
 
     const link = document.createElement('a')
     const fontFile = font.file || `${font.id}.ttf`
@@ -409,19 +468,19 @@ export default function Dashboard() {
       </div>
 
       {/* Centered Categories Switcher */}
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 12, justifyContent: 'flex-start', width: '100%', scrollbarWidth: 'thin' }}>
+      <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 12, justifyContent: 'flex-start', width: '100%' }}>
         {[
+          { id: 'freebies', label: 'Freebies (Weekly)' },
           { id: 'web_ui', label: 'Web & UI' },
           { id: 'fonts', label: 'Fonts' },
           { id: 'vectors', label: 'Vectors (EPS)' },
           { id: 'icons', label: 'Icons' },
           { id: 'photos', label: 'Photos & Images' },
-          { id: 'png', label: '📌 PNG Assets' },
+          { id: 'png', label: 'PNG Assets' },
           { id: 'mailers', label: 'Mailers & Invites' },
           { id: 'mockups', label: 'Mockups' },
           { id: 'logos', label: 'Logos' },
           { id: 'social_posts', label: 'Social Media Posts' },
-          { id: 'freebies', label: 'Freebies (Weekly)' },
           { id: 'artworks', label: 'Our Artworks' }
         ].map((cat) => (
           <motion.button
@@ -679,7 +738,25 @@ export default function Dashboard() {
                         {/* Left Column: Metadata & Actions */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, borderRight: '1px solid var(--glass-border)', paddingRight: 'var(--space-6)' }}>
                           <div>
-                            <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{p.name}</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                              <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{p.name}</h3>
+                              {p.isSimilarFallback && (
+                                <span style={{
+                                  background: 'rgba(200, 255, 0, 0.15)',
+                                  border: '1.5px solid var(--lime)',
+                                  color: 'var(--lime)',
+                                  fontSize: '9px',
+                                  fontWeight: 700,
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.05em',
+                                  boxShadow: '0 0 10px rgba(200, 255, 0, 0.25)'
+                                }}>
+                                  Similar
+                                </span>
+                              )}
+                            </div>
                             <span style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase' }}>{p.fileSize || 'Free TTF/OTF'}</span>
                           </div>
 

@@ -540,3 +540,12 @@ input:focus, textarea:focus {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   :root { --space-6: 16px; }
 }
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}

@@ -182,7 +182,7 @@ export default function Splash() {
               marginBottom: 'var(--space-12)',
             }}
           >
-            Create · Mockup · Publish · Sell
+            Design. Create. Inspire
           </motion.div>
         )}
       </div>

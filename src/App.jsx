@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import AppShell from '@/components/layout/AppShell.jsx'
 import Splash from '@/pages/Splash.jsx'
@@ -21,7 +21,16 @@ import Contact from '@/pages/Contact.jsx'
 import AIStudio from '@/pages/AIStudio.jsx'
 import NotFound from '@/pages/NotFound.jsx'
 import Analytics from '@/pages/Analytics.jsx'
+import { trackEvent } from '@/utils/tracker.js'
 
+// Track route page views
+function RouteTracker() {
+  const location = useLocation()
+  useEffect(() => {
+    trackEvent('page_view', { path: location.pathname })
+  }, [location.pathname])
+  return null
+}
 
 // Auth guard
 function PrivateRoute({ children }) {
@@ -47,6 +56,7 @@ export default function App() {
 
   return (
     <HashRouter>
+      <RouteTracker />
       <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden' }}>
         <Routes>
           {/* Splash */}

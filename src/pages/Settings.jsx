@@ -8,6 +8,7 @@ import { StatusBadge, PillBadge } from '@/components/ui/Badge.jsx'
 import { useAuthStore } from '@/store/index.js'
 import { useNavigate } from 'react-router-dom'
 import { notify } from '@/components/ui/Toast.jsx'
+import { trackEvent } from '@/utils/tracker.js'
 
 const PLAN_FEATURES = {
   free:  { name: 'Free', color: 'var(--text-secondary)', credits: 50, exports: 10 },
@@ -18,13 +19,14 @@ const PLAN_FEATURES = {
 export default function Settings() {
   const navigate = useNavigate()
   const { user, logout, credits, setUser } = useAuthStore()
-  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', company: user?.company || '', website: user?.website || '' })
+  const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' })
   const [notifications, setNotifications] = useState({ email: true, push: false, marketing: true })
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
   const plan = PLAN_FEATURES[user?.plan || 'pro']
 
   const handleSave = () => {
     setUser({ ...user, ...form })
+    trackEvent('profile_update', form)
     notify.success('Profile updated!', 'Your changes have been saved.')
   }
 
@@ -100,7 +102,7 @@ export default function Settings() {
           {activeSection === 'profile' && (
             <GlassCard hoverable={false}>
               <h3 style={{ marginBottom: 'var(--space-6)' }}>Profile Information</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {/* Avatar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
                   <div style={{
@@ -110,18 +112,17 @@ export default function Settings() {
                     fontSize: 'var(--text-xl)', fontWeight: 700, color: '#020208',
                     border: '2px solid rgba(200,255,0,0.3)',
                   }}>
-                    {form.name.charAt(0)}
+                    {form.name ? form.name.charAt(0).toUpperCase() : '?'}
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 'var(--text-lg)' }}>{form.name}</div>
-                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>GFXTAB Productions</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 'var(--text-lg)' }}>{form.name || 'Empty Profile'}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>{form.phone || form.email || 'No phone or email set'}</div>
                     <PillBadge color="lime" size="sm">{plan.name} Plan</PillBadge>
                   </div>
                 </div>
                 <FloatLabelInput id="settings-name" label="Full Name" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} />
-                <FloatLabelInput id="settings-email" label="Email" type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
-                <FloatLabelInput id="settings-company" label="Company" value={form.company} onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))} />
-                <FloatLabelInput id="settings-website" label="Website" value={form.website} onChange={(e) => setForm(f => ({ ...f, website: e.target.value }))} />
+                <FloatLabelInput id="settings-email" label="Email Address" type="email" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
+                <FloatLabelInput id="settings-phone" label="Mobile Number" value={form.phone} onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))} />
                 <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
                   <GlowButton id="settings-save-btn" onClick={handleSave}>Save Changes</GlowButton>
                 </div>

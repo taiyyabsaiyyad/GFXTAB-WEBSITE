@@ -9,6 +9,7 @@ import { notify } from '@/components/ui/Toast.jsx'
 import PaymentModal from '@/components/payment/PaymentModal.jsx'
 import Modal from '@/components/ui/Modal.jsx'
 import { useDownloadStore, useCollectionStore, useAuthStore } from '@/store/index.js'
+import { trackEvent } from '@/utils/tracker.js'
 
 const MOCK_FONTS = [
   { id: 'font-clash', name: 'Clash Display Font', category: 'fonts', description: 'Bold, premium display typography for branding layouts.', previewAsset: 'Photo from GFXTAB(17).jpg', isPremium: false, price: 0, tags: ['typography', 'display', 'sans'] },
@@ -182,6 +183,7 @@ export default function MockupDetail() {
       assetName: asset.name,
       previewUrl: asset.category === 'fonts' ? 'font-asset' : preview
     })
+    trackEvent('download', { assetId: asset.id, assetName: asset.name, category: asset.category })
 
     const link = document.createElement('a')
     if (asset.category === 'vectors') {

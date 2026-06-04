@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { motion } from 'framer-motion'
+import { trackEvent } from '@/utils/tracker.js'
 
 const uuid = () => crypto.randomUUID()
 
@@ -32,6 +33,91 @@ const detectIntent = (text) => {
   if (DESIGN_INTENTS.some(k => lower.includes(k))) return 'design'
   if (lower.includes('image') || lower.includes('generate') || lower.includes('create') || lower.includes('make')) return 'generate'
   return 'chat'
+}
+
+const getLocalAIResponse = (text) => {
+  const lower = text.toLowerCase()
+  
+  if (lower.includes('logo') || lower.includes('brand') || lower.includes('identity')) {
+    return `### ✦ GFXTAB Brand Identity Engine — Luxury Logo Design
+
+Here is a structured design system and implementation roadmap for your premium brand logo request:
+
+#### 1. Visual Strategy & Aesthetics
+* **Theme**: Modern luxury, high contrast, geometric harmony.
+* **Colors**: Deep Obsidian black (#020208), Glowing Lime accents (#C8FF00), and Warm Gold gradients.
+* **Typography**: Clean, high-fashion serif for the wordmark combined with a geometric sans-serif for sub-branding.
+
+#### 2. Suggested Core Attributes
+* **Iconography**: Minimalist abstract monogram combining your brand initials with sharp sleek lines.
+* **Symmetry**: Centered emblem with golden-ratio proportions.
+
+#### 3. Execution Plan
+1. **Sketching & Geometry**: Build circular grid guidelines.
+2. **Typography Mapping**: Apply wide letter-spacing on the brand name.
+3. **Mockup Application**: Render logo on luxury matte packaging.
+
+*Generating preview variants on the workspace canvas...*`
+  }
+
+  if (lower.includes('tshirt') || lower.includes('t-shirt') || lower.includes('mockup') || lower.includes('hoodie') || lower.includes('apparel') || lower.includes('product')) {
+    return `### ✦ GFXTAB Mockup Engine — Premium Product Render
+
+I have configured the creative workspace for rendering high-fidelity mockup templates:
+
+#### 1. Mockup Specifications
+* **Style**: Dark urban streetwear apparel mockup.
+* **Lighting**: Dual-neon setup (cyan and lime side-lighting).
+* **Placement Zone**: Centered chest print, scaled 1:1.
+
+#### 2. Texture & Fabric Realism
+* Heavyweight cotton fabric texture with high-density displacement maps.
+* Realistic shadow overlays that conform to clothing creases.
+
+#### 3. Custom Adjustments
+* You can adjust the artwork scale and rotation in the Editor panel.
+* Export high-res print-ready files directly from the top bar.
+
+*Generating apparel design variants in the creative workspace...*`
+  }
+
+  if (lower.includes('thumbnail') || lower.includes('youtube') || lower.includes('social') || lower.includes('banner') || lower.includes('instagram')) {
+    return `### ✦ GFXTAB Media Kit — Social Graphics Generator
+
+Here is the creative direction for your social media content layout:
+
+#### 1. Layout & Composition
+* **Focus Point**: Right-aligned subject with a bright green outer glow.
+* **Title Placement**: Left-aligned, using bold heavy display typography with 3D offset drop shadows.
+* **Background**: Dark cosmic gradient with radial cyan glow and floating design symbols.
+
+#### 2. Color Contrast
+* **Dominant Color**: Obsidian Void (#020208)
+* **Accent**: High-intensity GFXTAB Lime (#C8FF00) for CTA buttons and keyword highlights.
+
+#### 3. Next Steps
+1. Insert custom image layers in the assets upload panel.
+2. Export as high-contrast PNG for maximum screen pop.
+
+*Creating high-impact thumbnail templates in the workspace...*`
+  }
+
+  // General fallback
+  return `### ✦ GFXTAB AI Agent — Creative Design Assistant
+
+Welcome to GFXTAB AI Studio! I am running on the local fallback engine. Here is how I can assist you:
+
+#### 1. Creative Workflows
+* **Generate Designs**: Type "create a luxury logo" or "generate streetwear mockup" to trigger mockups/variants.
+* **Marketplace Integrations**: Download vectors (EPS) and premium fonts directly from the main dashboard.
+* **Asset Uploading**: Drag and drop your artwork files to place them on mockup templates.
+
+#### 2. Design System Tokens
+* **Void Obsidian**: \`#020208\`
+* **Neon Cyber Lime**: \`#C8FF00\`
+* **Cosmic Violet**: \`#8B5CF6\`
+
+*Type a design prompt to generate assets or customize templates!*`
 }
 
 
@@ -455,6 +541,9 @@ export default function AIStudio() {
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
 
+    // Track AI prompt activity
+    trackEvent('ai_prompt', { prompt: text, intent })
+
     // Placeholder AI message
     const aiMsg = { id: aiMsgId, role: 'assistant', content: '', intent, needsImage: false, engineeredPrompt: null, isComplete: false }
     setMessages(prev => [...prev, aiMsg])
@@ -510,10 +599,28 @@ export default function AIStudio() {
         setTimeout(() => generateImage(text), 600)
       }
     } catch (err) {
-      const errMsg = err.message?.includes('API_KEY') || err.message?.includes('401')
-        ? '⚠️ API key issue. Please check GFXTAB AI Studio configuration.'
-        : `⚠️ ${err.message || 'Network error. Please try again.'}`
-      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: errMsg, isComplete: true } : m))
+      console.warn('[Gemini] Direct call failed. Initiating GFXTAB Local Fallback Engine.', err)
+      const reply = getLocalAIResponse(text)
+      
+      // Simulate typewriter effect
+      let displayed = ''
+      const words = reply.split(' ')
+      for (let i = 0; i < words.length; i++) {
+        displayed += (i > 0 ? ' ' : '') + words[i]
+        const snap = displayed
+        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: snap } : m))
+        if (i % 5 === 0) await new Promise(r => setTimeout(r, 10))
+      }
+
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: reply, isComplete: true, needsImage: intent === 'generate' } : m))
+
+      // Save to localStorage
+      const updated = [...newMessages, { id: aiMsgId, role: 'assistant', content: reply, intent, isComplete: true }]
+      localStorage.setItem(`gfxtab_chat_${SESSION_ID}`, JSON.stringify(updated.slice(-30)))
+
+      if (intent === 'generate') {
+        setTimeout(() => generateImage(text), 600)
+      }
     } finally {
       setIsStreaming(false)
     }
@@ -586,13 +693,47 @@ export default function AIStudio() {
 
           {/* Messages */}
           <div className="studio-chat-feed">
-            {messages.map(msg => (
-              <MessageBubble
-                key={msg.id}
-                msg={msg}
-                onCopy={() => notify('Copied!')}
-              />
-            ))}
+            {messages.map((msg, index) => {
+              const isLast = index === messages.length - 1
+              return (
+                <div key={msg.id}>
+                  <MessageBubble
+                    msg={msg}
+                    onCopy={() => notify('Copied!')}
+                  />
+                  {/* If last message requested image generation, show the inline variants horizontally */}
+                  {isLast && msg.role === 'assistant' && msg.intent === 'generate' && (
+                    <div style={{ paddingLeft: '42px', marginTop: '12px' }}>
+                      {isGeneratingImage ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: 'rgba(200,255,0,0.03)', border: '1px solid rgba(200,255,0,0.1)', borderRadius: '12px', width: 'fit-content' }}>
+                          <span style={{ width: '14px', height: '14px', border: '2px solid rgba(200,255,0,0.1)', borderTopColor: 'var(--lime)', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s infinite linear' }} />
+                          <span style={{ fontSize: '13px', color: 'var(--lime)', fontWeight: 500 }}>Generating premium assets...</span>
+                        </div>
+                      ) : variants.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            Generated Design Variations
+                          </div>
+                          <div className="studio-inline-variants-row no-scrollbar">
+                            {variants.map(v => (
+                              <div key={v.id} className="studio-inline-card">
+                                <img src={v.url} alt={v.name} />
+                                <div className="studio-inline-card__info">
+                                  <span className="studio-inline-card__name" title={v.name}>{v.name}</span>
+                                  <button onClick={() => downloadVariant(v)} className="studio-inline-card__btn" title="Download Asset">
+                                    <DownloadIcon size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
             {isStreaming && messages[messages.length - 1]?.content === '' && <ThinkingDots />}
             <div ref={chatEndRef} />
           </div>
@@ -640,103 +781,6 @@ export default function AIStudio() {
             </div>
           </div>
         </div>
-
-        {/* ── Center: Workspace ── */}
-        <div className="studio-workspace">
-          <div className="studio-workspace-header">
-            <h2>Creative Workspace</h2>
-            {variants.length > 0 && (
-              <div className="workspace-actions">
-                <button className="ws-action-btn" onClick={() => selectedVariant && generateImage(messages.filter(m => m.role === 'user').slice(-1)[0]?.content || 'regenerate')}>
-                  <RefreshIcon />Regenerate
-                </button>
-                <button className="ws-action-btn ws-action-btn--lime" onClick={() => selectedVariant && downloadVariant(selectedVariant)}>
-                  <DownloadIcon />Download
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Workspace content */}
-          {isGeneratingImage ? (
-            <div className="workspace-generating">
-              <div className="gen-spinner" />
-              <p>Generating 4 AI variants…</p>
-              <span>Engineering the perfect prompt</span>
-            </div>
-          ) : variants.length > 0 ? (
-            <div className="workspace-content">
-              {/* Selected preview */}
-              {selectedVariant && (
-                <div className="workspace-preview">
-                  <img src={selectedVariant.url} alt={selectedVariant.name} />
-                  <div className="workspace-preview__meta">
-                    <h3>{selectedVariant.name}</h3>
-                    {selectedVariant.engineeredPrompt && (
-                      <details className="ws-prompt-detail">
-                        <summary>🔧 Engineered Prompt</summary>
-                        <p>{selectedVariant.engineeredPrompt}</p>
-                      </details>
-                    )}
-                    <div className="ws-action-row">
-                      <button className="ws-primary-btn" onClick={() => downloadVariant(selectedVariant)}>
-                        <DownloadIcon />Download
-                      </button>
-                      <button className="ws-secondary-btn" onClick={() => publishVariant(selectedVariant)}>
-                        <PublishIcon />Publish
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Variants grid */}
-              <div className="variants-label">
-                <span>4 AI Variations</span>
-                <button className="ws-ghost-btn" onClick={() => setShowGallery(true)}>View Gallery</button>
-              </div>
-              <div className="variants-grid">
-                {variants.map(v => (
-                  <VariantCard
-                    key={v.id}
-                    variant={v}
-                    isSelected={selectedVariant?.id === v.id}
-                    onSelect={setSelectedVariant}
-                    onDownload={downloadVariant}
-                    onPublish={publishVariant}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="workspace-empty" style={{
-              background: 'radial-gradient(circle at center, rgba(200,255,0,0.02) 0%, transparent 70%)',
-            }}>
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                  width: 72, height: 72,
-                  background: 'rgba(200,255,0,0.04)',
-                  border: '1.5px solid rgba(200,255,0,0.2)',
-                  borderRadius: 24,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--lime)',
-                  marginBottom: 'var(--space-4)',
-                  boxShadow: 'var(--glow-lime)',
-                }}
-              >
-                <SparkleIcon size={32} />
-              </motion.div>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, color: '#fafafa', margin: '0 0 8px' }}>
-                Your canvas awaits
-              </h3>
-              <p style={{ color: 'var(--text-dim)', fontSize: '14px', maxWidth: 400, lineHeight: 1.6, margin: 0 }}>
-                Ask GFXTAB AI Agent to generate custom vector logos, UI mockups, thumbnails, or social graphics. Your generated variants will instantly render here.
-              </p>
-            </div>
-          )}
-        </div>
       </div>
     </>
   )
@@ -748,8 +792,9 @@ const STUDIO_CSS = `
 
 /* Root */
 .studio-root {
-  display: grid;
-  grid-template-columns: 500px 1fr;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   height: calc(100vh - 64px);
   background: #09090b;
   font-family: 'Inter', sans-serif;
@@ -761,9 +806,12 @@ const STUDIO_CSS = `
 .studio-chat-panel {
   display: flex;
   flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,0.06);
   border-right: 1px solid rgba(255,255,255,0.06);
   background: #0d0d10;
   height: 100%;
+  width: 100%;
+  max-width: 900px;
   overflow: hidden;
 }
 
@@ -1536,12 +1584,87 @@ const STUDIO_CSS = `
 }
 
 /* ── Responsive ── */
-@media (max-width: 1200px) {
-  .studio-root { grid-template-columns: 440px 1fr; }
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .studio-chat-panel {
+    border-left: none;
+    border-right: none;
+    max-width: 100%;
+  }
 }
 
-@media (max-width: 900px) {
-  .studio-root { grid-template-columns: 1fr; }
-  .studio-workspace { display: none; }
+/* Inline Generated Variants */
+.studio-inline-variants-row {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  width: 100%;
+}
+
+.studio-inline-card {
+  flex-shrink: 0;
+  width: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #18181b;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.studio-inline-card:hover {
+  transform: translateY(-4px);
+  border-color: #c8ff00;
+  box-shadow: 0 8px 24px rgba(200,255,0,0.15);
+}
+
+.studio-inline-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.studio-inline-card:hover img {
+  transform: scale(1.05);
+}
+
+.studio-inline-card__info {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #09090b;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.studio-inline-card__name {
+  font-size: 11px;
+  color: #fafafa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+  font-weight: 500;
+}
+
+.studio-inline-card__btn {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.studio-inline-card__btn:hover {
+  color: #c8ff00;
+  background: rgba(200,255,0,0.1);
 }
 `

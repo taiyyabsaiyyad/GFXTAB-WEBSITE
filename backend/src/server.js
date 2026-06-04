@@ -272,6 +272,42 @@ app.use('/projects', projectRoutes)
 app.use('/brands', brandRoutes)
 app.use('/studio', aiStudioRoutes)
 
+// ---- User Activity Tracking API ----
+app.post('/track', (req, res) => {
+  const trackingFile = 'd:/GFXTAB/Website/Mockup/gfxtab_user_tracking.json'
+  const newEvent = req.body
+
+  try {
+    let events = []
+    if (fs.existsSync(trackingFile)) {
+      const content = fs.readFileSync(trackingFile, 'utf8')
+      if (content.trim()) {
+        try {
+          events = JSON.parse(content)
+        } catch (e) {
+          console.error('[Tracker] Failed to parse tracking file, resetting.', e)
+        }
+      }
+    }
+    events.push(newEvent)
+    fs.writeFileSync(trackingFile, JSON.stringify(events, null, 2), 'utf8')
+    console.log(`[TRACK] ${newEvent.event} for ${newEvent.user?.email || 'Guest'}`)
+    res.json({ success: true })
+  } catch (err) {
+    console.error('[Tracker] Error writing to tracking file:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.get('/track/list', (req, res) => {
+  const trackingFile = 'd:/GFXTAB/Website/Mockup/gfxtab_user_tracking.json'
+  if (fs.existsSync(trackingFile)) {
+    res.sendFile(trackingFile)
+  } else {
+    res.json([])
+  }
+})
+
 // ---- 404 ----
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' })

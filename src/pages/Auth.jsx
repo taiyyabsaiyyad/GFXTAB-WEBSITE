@@ -10,6 +10,7 @@ import { notify } from '@/components/ui/Toast.jsx'
 import FloatWrapper from '@/components/animations/FloatWrapper.jsx'
 import { supabase, isSupabaseConfigured } from '@/supabase.js'
 import mascotLogo from '@/assets/gfxtab.png'
+import { trackEvent } from '@/utils/tracker.js'
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -50,13 +51,16 @@ export default function Auth() {
           })
           if (error) throw error
           
-          login({
+          const userObj = {
             id: data.user.id,
             email: data.user.email,
-            name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+            name: data.user.user_metadata?.full_name || '',
+            phone: data.user.user_metadata?.phone || '',
             avatar: data.user.user_metadata?.avatar_url,
             plan: 'pro'
-          })
+          }
+          login(userObj)
+          trackEvent('auth_login', { email: userObj.email })
           notify.success('Welcome back to GFXTAB AI Studio!', 'Your workspace is ready.')
           navigate('/dashboard')
         } else {
@@ -70,6 +74,7 @@ export default function Auth() {
             }
           })
           if (error) throw error
+          trackEvent('auth_signup', { email: form.email, name: form.name })
           notify.success('Sign up complete!', 'Please check your email to verify your account.')
           setMode('login')
         }
@@ -83,12 +88,14 @@ export default function Auth() {
       await new Promise(r => setTimeout(r, 800))
       const mockUser = {
         id: 'demo-user-id',
-        name: form.name || 'Creative Creator',
+        name: form.name || '',
         email: form.email,
+        phone: '',
         avatar: null,
         plan: 'pro',
       }
       login(mockUser)
+      trackEvent('auth_login', { email: mockUser.email, mode: 'demo' })
       notify.success('Welcome to GFXTAB AI Studio (Demo Mode)', 'Live connection settings are active.')
       setLoading(false)
       navigate('/dashboard')
@@ -102,7 +109,12 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/dashboard`
+            redirectTo: `${window.location.origin}/dashboard`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            },
+            scopes: 'email profile'
           }
         })
         if (error) throw error
@@ -112,7 +124,9 @@ export default function Auth() {
       }
     } else {
       await new Promise(r => setTimeout(r, 600))
-      login({ id: 'demo-google-user', name: 'Google Creator', email: 'creator@gfxtab.com', plan: 'pro' })
+      const mockGoogleUser = { id: 'demo-google-user', name: '', email: 'creator@gfxtab.com', phone: '', plan: 'pro' }
+      login(mockGoogleUser)
+      trackEvent('auth_login', { email: mockGoogleUser.email, mode: 'demo_google' })
       notify.success('Logged in with Google (Demo Mode)', 'Workspace loaded.')
       setLoading(false)
       navigate('/dashboard')
@@ -131,26 +145,6 @@ export default function Auth() {
       padding: 'var(--space-6)',
     }}>
       <StarField />
-
-      {/* Floating decorative elements */}
-      <FloatWrapper
-        style={{ position: 'fixed', top: '15%', left: '8%', zIndex: 0 }}
-        amplitude={20} duration={6} delay={0}
-      >
-        <div style={{ fontSize: '4rem', opacity: 0.12 }}>👕</div>
-      </FloatWrapper>
-      <FloatWrapper
-        style={{ position: 'fixed', bottom: '20%', right: '10%', zIndex: 0 }}
-        amplitude={15} duration={5} delay={1}
-      >
-        <div style={{ fontSize: '3rem', opacity: 0.1 }}>📚</div>
-      </FloatWrapper>
-      <FloatWrapper
-        style={{ position: 'fixed', top: '60%', left: '5%', zIndex: 0 }}
-        amplitude={18} duration={7} delay={0.5}
-      >
-        <div style={{ fontSize: '2.5rem', opacity: 0.08 }}>☕</div>
-      </FloatWrapper>
 
       {/* Auth card */}
       <motion.div
