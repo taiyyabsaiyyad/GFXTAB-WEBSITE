@@ -96,7 +96,7 @@ export default function Dashboard() {
   const [portfolioStats, setPortfolioStats] = useState(null)
   const [selectedPortfolioProject, setSelectedPortfolioProject] = useState(null)
   const [heroIndex, setHeroIndex] = useState(0)
-
+  
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}assets/portfolio_data.json`)
       .then(r => r.json()).then(d => { 
@@ -420,7 +420,7 @@ export default function Dashboard() {
             width: '100%', height: '50vh', minHeight: 400, borderRadius: 'var(--radius-xl)',
             overflow: 'hidden', position: 'relative', marginBottom: 'var(--space-8)'
           }}>
-            <img src={`${import.meta.env.BASE_URL}assets/IMG/${selectedPortfolioProject.coverImage}`} alt={selectedPortfolioProject.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={`${import.meta.env.BASE_URL}assets/${selectedPortfolioProject.coverImage}`} alt={selectedPortfolioProject.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #090910, transparent)' }} />
             
             <div style={{ position: 'absolute', bottom: 40, left: 40 }}>
@@ -475,7 +475,7 @@ export default function Dashboard() {
             {selectedPortfolioProject.gallery.map((media, idx) => (
               <GlassCard key={idx} style={{ overflow: 'hidden', padding: 0, border: 'none', borderRadius: 'var(--radius-lg)' }}>
                 {media.type === 'image' ? (
-                  <img src={`${import.meta.env.BASE_URL}assets/IMG/${media.url}`} style={{ width: '100%', height: 'auto', display: 'block' }} alt="Gallery Item" />
+                  <img src={`${import.meta.env.BASE_URL}assets/${media.url}`} style={{ width: '100%', height: 'auto', display: 'block' }} alt="Gallery Item" />
                 ) : null}
               </GlassCard>
             ))}
@@ -854,47 +854,57 @@ export default function Dashboard() {
                         style={{ position: 'absolute', inset: 0 }}
                       >
                         <img 
-                          src={`${import.meta.env.BASE_URL}assets/IMG/${portfolioProjects[heroIndex].coverImage}`} 
+                          src={`${import.meta.env.BASE_URL}assets/${portfolioProjects[heroIndex].coverImage}`} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                         />
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, #090910 10%, rgba(9,9,16,0.6) 50%, transparent)' }} />
                         
-                        <div style={{ position: 'absolute', bottom: 60, left: 60, maxWidth: 600 }}>
-                          <span style={{ 
-                            background: 'var(--lime)', color: '#000', padding: '4px 12px', 
-                            borderRadius: 'var(--radius-full)', fontSize: 12, fontWeight: 800, textTransform: 'uppercase' 
-                          }}>
-                            {portfolioProjects[heroIndex].category}
-                          </span>
-                          <h1 style={{ fontSize: 'clamp(36px, 4vw, 56px)', fontWeight: 800, marginTop: 16, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                        <div style={{ position: 'absolute', bottom: 60, left: 60, maxWidth: 500 }}>
+                          <motion.span 
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                            style={{ color: 'var(--lime)', fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}
+                          >
+                            Featured Case Study
+                          </motion.span>
+                          <motion.h2 
+                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                            style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}
+                          >
                             {portfolioProjects[heroIndex].title}
-                          </h1>
-                          <p style={{ color: '#d4d4d8', fontSize: 16, marginTop: 16, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {portfolioProjects[heroIndex].overview}
-                          </p>
-                          <div style={{ marginTop: 24 }}>
+                          </motion.h2>
+                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                             <GlowButton onClick={() => setSelectedPortfolioProject(portfolioProjects[heroIndex])}>
-                              View Case Study <ArrowRight size={16} />
+                              View Case Study <ArrowRight size={18} />
                             </GlowButton>
-                          </div>
+                          </motion.div>
                         </div>
                       </motion.div>
                     </AnimatePresence>
 
-                    {/* Slider Controls */}
-                    <div style={{ position: 'absolute', bottom: 30, right: 40, display: 'flex', gap: 12 }}>
-                      <button 
-                        onClick={() => setHeroIndex(prev => prev === 0 ? Math.min(portfolioProjects.length, 5) - 1 : prev - 1)}
-                        style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-                      <button 
-                        onClick={() => setHeroIndex(prev => (prev + 1) % Math.min(portfolioProjects.length, 5))}
-                        style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <ChevronRight size={20} />
-                      </button>
+                    {/* Classy Progress Indicators */}
+                    <div style={{ position: 'absolute', bottom: 30, left: 60, display: 'flex', gap: 8 }}>
+                      {Array.from({ length: Math.min(portfolioProjects.length, 5) }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          onClick={() => setHeroIndex(i)}
+                          style={{ 
+                            height: 4, width: heroIndex === i ? 32 : 12, borderRadius: 2, 
+                            background: heroIndex === i ? 'var(--lime)' : 'rgba(255,255,255,0.3)', 
+                            cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            position: 'relative', overflow: 'hidden'
+                          }}
+                        >
+                          {heroIndex === i && (
+                            <motion.div 
+                              initial={{ width: '0%' }}
+                              animate={{ width: '100%' }}
+                              transition={{ duration: 5, ease: 'linear' }}
+                              style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: '#fff' }}
+                              onAnimationComplete={() => setHeroIndex(prev => (prev + 1) % Math.min(portfolioProjects.length, 5))}
+                            />
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -928,7 +938,7 @@ export default function Dashboard() {
                           {/* Image Wrapper */}
                           <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
                             <img 
-                              src={`${import.meta.env.BASE_URL}assets/IMG/${project.coverImage}`} 
+                              src={`${import.meta.env.BASE_URL}assets/${project.coverImage}`} 
                               style={{ 
                                 width: '100%', height: '100%', objectFit: 'cover', 
                                 transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)' 
