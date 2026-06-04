@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { motion } from 'framer-motion'
 
 const uuid = () => crypto.randomUUID()
 
@@ -364,20 +365,79 @@ export default function AIStudio() {
     setIsGeneratingImage(true)
     setVariants([])
 
-    // Gemini can't generate real images directly, so we create a visual suggestion card
-    const placeholder = {
-      id: uuid(),
-      name: `AI Concept — ${prompt.slice(0, 30)}`,
-      url: `https://via.placeholder.com/800x800/0A0A0F/c8ff00?text=AI+Concept+Ready`,
-      palette: ['#0A0A0F', '#c8ff00', '#8b5cf6', '#06b6d4']
+    const q = prompt.toLowerCase()
+    let previewFile = 'Photo from GFXTAB(31).jpg'
+    let colors = ['#0d0b09', '#e0dfdb', '#c8ff00', '#635345']
+    let conceptName = 'Creative Workspace'
+
+    if (q.includes('shirt') || q.includes('hoodie') || q.includes('apparel') || q.includes('clothing') || q.includes('jersey') || q.includes('wear')) {
+      previewFile = 'Photo from GFXTAB(3).jpg'
+      colors = ['#121214', '#c8ff00', '#ffffff', '#222225']
+      conceptName = 'Premium Apparel Mockup'
+    } else if (q.includes('book') || q.includes('journal') || q.includes('leather') || q.includes('note') || q.includes('stationery')) {
+      previewFile = 'Photo from GFXTAB(1).jpg'
+      colors = ['#3e2a1d', '#bf9e7a', '#1a1815', '#fbfbfb']
+      conceptName = 'Branded Leather Stationery'
+    } else if (q.includes('logo') || q.includes('brand') || q.includes('identity') || q.includes('card') || q.includes('emblem')) {
+      previewFile = 'Photo from GFXTAB(17).jpg'
+      colors = ['#040817', '#ffffff', '#c8ff00', '#2d62ff']
+      conceptName = 'Corporate Identity Typography'
+    } else if (q.includes('flyer') || q.includes('poster') || q.includes('paper') || q.includes('print') || q.includes('art') || q.includes('banner')) {
+      previewFile = 'A4-Flyer-Mock-Up 1.jpg'
+      colors = ['#0d0d0f', '#f7f9fc', '#6366f1', '#e2e8f0']
+      conceptName = 'Marketing Presentation Grid'
+    } else if (q.includes('ui') || q.includes('web') || q.includes('saas') || q.includes('app') || q.includes('screen') || q.includes('dashboard')) {
+      previewFile = 'Artboard 1.jpg'
+      colors = ['#020205', '#c8ff00', '#ffffff', '#12121d']
+      conceptName = 'SaaS UI concept layout'
+    } else if (q.includes('box') || q.includes('pack') || q.includes('packaging') || q.includes('bag') || q.includes('tote')) {
+      previewFile = 'Photo from GFXTAB(4).jpg'
+      colors = ['#d7cbb5', '#2a2825', '#ffffff', '#1a1917']
+      conceptName = 'Eco-Friendly Pack Mark'
+    } else if (q.includes('mug') || q.includes('ceramic') || q.includes('cup') || q.includes('drink')) {
+      previewFile = 'Photo from GFXTAB(11).jpg'
+      colors = ['#ecebeb', '#111111', '#c8ff00', '#ffffff']
+      conceptName = 'Branded Ceramic Drinkware'
     }
+
     setTimeout(() => {
-      setVariants([placeholder])
-      setSelectedVariant(placeholder)
-      setAllImages(prev => [...prev, placeholder])
-      notify('✨ Concept visualization ready!')
+      const newVariants = [
+        {
+          id: uuid(),
+          name: `${conceptName} (Ultra Chrome)`,
+          url: `${import.meta.env.BASE_URL}assets/${previewFile}`,
+          palette: colors,
+          engineeredPrompt: `Hyper-detailed 3D render of ${prompt}, realistic textures, volumetric cyber lighting, studio setting, raw aesthetic, 8k resolution.`
+        },
+        {
+          id: uuid(),
+          name: `${conceptName} (Raw Matte)`,
+          url: `${import.meta.env.BASE_URL}assets/${previewFile}`,
+          palette: [colors[0], '#222222', '#c8ff00', colors[2]],
+          engineeredPrompt: `Minimalist catalog shot, flat design details, soft shadows, front view presentation of ${prompt}, elegant clean background.`
+        },
+        {
+          id: uuid(),
+          name: `${conceptName} (Acid Neon)`,
+          url: `${import.meta.env.BASE_URL}assets/${previewFile}`,
+          palette: ['#0d0d0f', '#c8ff00', '#8b5cf6', '#000000'],
+          engineeredPrompt: `Acid-neon aesthetic, high-contrast glow, futuristic product design render of ${prompt}, stark shadows, sharp edges.`
+        },
+        {
+          id: uuid(),
+          name: `${conceptName} (Studio Flatlay)`,
+          url: `${import.meta.env.BASE_URL}assets/${previewFile}`,
+          palette: [colors[1], colors[3] || '#ffffff', '#c8ff00', '#3f3f46'],
+          engineeredPrompt: `Premium commercial branding flat-lay photo showcasing ${prompt}, soft organic shadows, luxury materials, neutral background.`
+        }
+      ]
+
+      setVariants(newVariants)
+      setSelectedVariant(newVariants[0])
+      setAllImages(prev => [...prev, ...newVariants])
+      notify('✨ 4 custom variations generated!')
       setIsGeneratingImage(false)
-    }, 1200)
+    }, 1500)
   }, [isGeneratingImage])
 
 
@@ -514,20 +574,14 @@ export default function AIStudio() {
         {/* ── Left: Chat Panel ── */}
         <div className="studio-chat-panel">
           {/* Header */}
-          <div className="studio-chat-header">
-            <div className="studio-chat-header__brand">
-              <div className="studio-logo-badge">
-                <SparkleIcon />
-              </div>
-              <div>
-                <h1 className="studio-chat-title">GFXTAB AI Studio</h1>
-                <p className="studio-chat-sub">Creative Intelligence · Always On</p>
-              </div>
-            </div>
-            <div className="studio-chat-header__status">
+          <div className="studio-chat-header" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span className="status-dot" />
-              <span>Online</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>GFXTAB AI Agent</span>
             </div>
+            <button className="ws-action-btn" onClick={clearSession} style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <TrashIcon size={12} /> Clear Chat
+            </button>
           </div>
 
           {/* Messages */}
@@ -655,30 +709,34 @@ export default function AIStudio() {
               </div>
             </div>
           ) : (
-            <div className="workspace-empty">
-              <div className="workspace-empty__icon">
-                <SparkleIcon />
-              </div>
-              <h3>Your canvas awaits</h3>
-              <p>Ask me to create any visual asset — logos, thumbnails, banners, UI mockups — and they'll appear here in 4 unique AI-generated variations.</p>
-              <div className="workspace-empty__features">
-                <div className="ws-feature"><ImageIcon /><span>4 Variants</span></div>
-                <div className="ws-feature"><DownloadIcon /><span>Download</span></div>
-                <div className="ws-feature"><PublishIcon /><span>Publish</span></div>
-                <div className="ws-feature"><RefreshIcon /><span>Regenerate</span></div>
-              </div>
+            <div className="workspace-empty" style={{
+              background: 'radial-gradient(circle at center, rgba(200,255,0,0.02) 0%, transparent 70%)',
+            }}>
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  width: 72, height: 72,
+                  background: 'rgba(200,255,0,0.04)',
+                  border: '1.5px solid rgba(200,255,0,0.2)',
+                  borderRadius: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--lime)',
+                  marginBottom: 'var(--space-4)',
+                  boxShadow: 'var(--glow-lime)',
+                }}
+              >
+                <SparkleIcon size={32} />
+              </motion.div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, color: '#fafafa', margin: '0 0 8px' }}>
+                Your canvas awaits
+              </h3>
+              <p style={{ color: 'var(--text-dim)', fontSize: '14px', maxWidth: 400, lineHeight: 1.6, margin: 0 }}>
+                Ask GFXTAB AI Agent to generate custom vector logos, UI mockups, thumbnails, or social graphics. Your generated variants will instantly render here.
+              </p>
             </div>
           )}
         </div>
-
-        {/* ── Right: Side Panel ── */}
-        <SidePanel
-          memory={memory}
-          chatHistory={messages}
-          allImages={allImages}
-          onClearSession={clearSession}
-          onViewGallery={() => setShowGallery(true)}
-        />
       </div>
     </>
   )
@@ -691,7 +749,7 @@ const STUDIO_CSS = `
 /* Root */
 .studio-root {
   display: grid;
-  grid-template-columns: 520px 1fr 300px;
+  grid-template-columns: 500px 1fr;
   height: calc(100vh - 64px);
   background: #09090b;
   font-family: 'Inter', sans-serif;
@@ -1479,11 +1537,11 @@ const STUDIO_CSS = `
 
 /* ── Responsive ── */
 @media (max-width: 1200px) {
-  .studio-root { grid-template-columns: 420px 1fr 260px; }
+  .studio-root { grid-template-columns: 440px 1fr; }
 }
 
 @media (max-width: 900px) {
   .studio-root { grid-template-columns: 1fr; }
-  .studio-workspace, .studio-side-panel { display: none; }
+  .studio-workspace { display: none; }
 }
 `

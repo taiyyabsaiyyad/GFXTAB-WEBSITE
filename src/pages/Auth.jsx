@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/index.js'
 import { notify } from '@/components/ui/Toast.jsx'
 import FloatWrapper from '@/components/animations/FloatWrapper.jsx'
 import { supabase, isSupabaseConfigured } from '@/supabase.js'
+import mascotLogo from '@/assets/gfxtab.png'
 
 export default function Auth() {
   const navigate = useNavigate()
@@ -161,12 +162,16 @@ export default function Auth() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 16,
-            background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 64, height: 64,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto var(--space-4)',
             boxShadow: 'var(--glow-lime-strong)',
+            border: '2px solid rgba(200, 255, 0, 0.4)',
+            background: 'var(--void-3)'
           }}>
-            <Zap size={24} color="#020208" fill="#020208" />
+            <img src={mascotLogo} alt="GFXTAB Mascot" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
           </div>
           <h1 style={{ fontSize: 'var(--text-2xl)', marginBottom: 6 }}>
             {mode === 'login' ? 'Welcome back' : 'Create account'}

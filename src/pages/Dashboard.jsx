@@ -317,7 +317,13 @@ export default function Dashboard() {
       <div style={{ padding: 'var(--space-8) 0 var(--space-4)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'center' }}>
           <h1 style={{ fontSize: 'clamp(44px, 6vw, 68px)', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.03em', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <span className="animated-gradient-text" style={{ textShadow: '0 0 40px rgba(99,102,241,0.2)' }}>GFXTAB</span>
+            <motion.span 
+              layoutId="gfxtab-title"
+              className="animated-gradient-text" 
+              style={{ textShadow: '0 0 40px rgba(99,102,241,0.2)' }}
+            >
+              GFXTAB
+            </motion.span>
             <span style={{ fontSize: 'clamp(14px, 2.5vw, 20px)', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 4 }}>
               AI Studio & Marketplace
             </span>

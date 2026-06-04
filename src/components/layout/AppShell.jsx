@@ -4,8 +4,12 @@ import TopBar from './TopBar.jsx'
 import MobileNav from './MobileNav.jsx'
 import ToastProvider from '@/components/ui/Toast.jsx'
 import UpgradeModal from '@/components/payment/UpgradeModal.jsx'
+import { useLocation } from 'react-router-dom'
 
 export default function AppShell({ children }) {
+  const location = useLocation()
+  const isStudio = location.pathname === '/ai-studio'
+
   return (
     <>
       {/* Global background */}
@@ -25,7 +29,7 @@ export default function AppShell({ children }) {
         {/* Main content */}
         <main className="app-main" style={{ position: 'relative', zIndex: 1 }}>
           <TopBar />
-          <div style={{ padding: 'var(--space-6)' }}>
+          <div style={{ padding: isStudio ? '0' : 'var(--space-6)' }}>
             {children}
           </div>
         </main>

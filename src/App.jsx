@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import AppShell from '@/components/layout/AppShell.jsx'
 import Splash from '@/pages/Splash.jsx'
 import Auth from '@/pages/Auth.jsx'
@@ -46,15 +47,16 @@ export default function App() {
 
   return (
     <HashRouter>
-      <Routes>
-        {/* Splash */}
-        <Route
-          path="/"
-          element={splashDone ? <Navigate to="/dashboard" replace /> : <Splash />}
-        />
+      <div style={{ position: 'relative', width: '100%', minHeight: '100vh', overflowX: 'hidden' }}>
+        <Routes>
+          {/* Splash */}
+          <Route
+            path="/"
+            element={splashDone ? <Navigate to="/dashboard" replace /> : <div style={{ background: '#020208', minHeight: '100vh' }} />}
+          />
 
-        {/* Auth */}
-        <Route path="/auth" element={<Auth />} />
+          {/* Auth */}
+          <Route path="/auth" element={<Auth />} />
 
         {/* Authenticated app routes */}
         <Route
@@ -191,6 +193,10 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <AnimatePresence>
+        {!splashDone && <Splash key="splash" />}
+      </AnimatePresence>
+      </div>
     </HashRouter>
   )
 }
