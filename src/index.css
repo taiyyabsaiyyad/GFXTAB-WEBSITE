@@ -218,6 +218,32 @@ input, textarea, select {
 /* ---- GLOW UTILITIES ---- */
 .glow-lime { box-shadow: var(--glow-lime); }
 .glow-lime-strong { box-shadow: var(--glow-lime-strong); }
+
+/* Glowing border utility */
+.glow-border {
+  border: 1.5px solid rgba(200, 255, 0, 0.35) !important;
+  box-shadow: 0 0 16px rgba(200, 255, 0, 0.12), inset 0 0 8px rgba(200, 255, 0, 0.04) !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+.glow-border:hover, .glow-border:focus {
+  border-color: rgba(200, 255, 0, 0.65) !important;
+  box-shadow: 0 0 28px rgba(200, 255, 0, 0.25), inset 0 0 12px rgba(200, 255, 0, 0.06) !important;
+}
+
+/* Pulsing animated glow border for round sections */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(200, 255, 0, 0.15), 0 0 0 1px rgba(200, 255, 0, 0.2); }
+  50% { box-shadow: 0 0 28px rgba(200, 255, 0, 0.3), 0 0 0 1px rgba(200, 255, 0, 0.45); }
+}
+.glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+
+/* Input focus with glow */
+input:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(200, 255, 0, 0.5) !important;
+  box-shadow: 0 0 20px rgba(200, 255, 0, 0.15) !important;
+}
+
 .glow-violet { box-shadow: var(--glow-violet); }
 .glow-cryo { box-shadow: var(--glow-cryo); }
 .text-glow-lime { text-shadow: 0 0 20px rgba(200, 255, 0, 0.6); }

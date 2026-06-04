@@ -272,7 +272,7 @@ export const useAuthStore = create(persist(
       set({ user: null, isAuthenticated: false })
     },
     setUser: (user) => set({ user }),
-    useCredit: () => set((s) => ({ credits: Math.max(0, s.credits - 1) })),
+    useCredit: () => set((s) => ({ credits: Math.max(0, s.credits - 10) })),
     addCredits: (n) => set((s) => ({ credits: s.credits + n })),
 
     syncSession: async () => {

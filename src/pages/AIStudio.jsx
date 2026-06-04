@@ -8,8 +8,32 @@ import ReactMarkdown from 'react-markdown'
 
 const uuid = () => crypto.randomUUID()
 
+// ── Gemini Direct API (no backend needed) ─────────────────────────
+// Key is injected via VITE_GEMINI_KEY environment variable at build time
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY || ''
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`
 
-// ── Icons (inline SVG for zero-dep) ──────────────────────────────
+const SYSTEM_PROMPT = `You are GFXTAB AI Studio — a premium AI creative assistant built by GFXTAB Productions (Tayyab Saiyyad, Shahapur, Thane, Maharashtra). You help designers, creators, and brand builders with:
+• Logo & brand identity design advice
+• Mockup creation tips and template suggestions  
+• YouTube thumbnails & social media visuals
+• Color palettes, typography, and design systems
+• Creative direction, image prompts, design critique
+• Reel scripts, caption copy, content strategy
+
+GFXTAB Style: Dark cyberpunk aesthetics, neon accents (cyan #00F5FF, magenta #FF2D78, lime #c8ff00), bold typography.
+Always respond with creative depth. Be specific, inspiring, and actionable. Use markdown for structure.`
+
+const DESIGN_INTENTS = ['logo', 'brand', 'mockup', 'thumbnail', 'poster', 'banner', 'icon', 'ui', 'color', 'font', 'typography', 'social', 'instagram', 'youtube']
+
+const detectIntent = (text) => {
+  const lower = text.toLowerCase()
+  if (DESIGN_INTENTS.some(k => lower.includes(k))) return 'design'
+  if (lower.includes('image') || lower.includes('generate') || lower.includes('create') || lower.includes('make')) return 'generate'
+  return 'chat'
+}
+
+
 const Icon = ({ d, size = 20, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d={d} />
@@ -311,37 +335,22 @@ export default function AIStudio() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Load history from backend
+  // Load from localStorage (no backend)
   useEffect(() => {
-    fetch(`${API_BASE}/chat/history/${SESSION_ID}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.memory) setMemory(data.memory)
-        if (data.history?.length > 0) {
-          const restored = []
-          for (let i = 0; i < data.history.length; i += 2) {
-            if (data.history[i]) restored.push({ id: uuid(), role: 'user', content: data.history[i].content, isComplete: true })
-            if (data.history[i + 1]) restored.push({ id: uuid(), role: 'assistant', content: data.history[i + 1].content, isComplete: true })
-          }
-          setMessages(restored)
-        } else {
-          // Welcome message
-          setMessages([{
-            id: uuid(),
-            role: 'assistant',
-            content: `**Welcome to GFXTAB AI Studio** 🎨\n\nI'm your dedicated creative AI — built for designers, creators, and brand builders.\n\n**What can I help you create?**\n• Logos & brand identities\n• YouTube thumbnails\n• Social media visuals\n• UI/UX design concepts\n• Color palettes & typography\n• Scripts & creative copy\n\n*Start by describing what you want to build. The more context, the better the output.*`,
-            isComplete: true
-          }])
-        }
-      })
-      .catch(() => {
-        setMessages([{
-          id: uuid(),
-          role: 'assistant',
-          content: `**Welcome to GFXTAB AI Studio** 🎨\n\nI'm your dedicated AI creative partner. Tell me what you want to create and I'll make it happen.`,
-          isComplete: true
-        }])
-      })
+    const stored = localStorage.getItem(`gfxtab_chat_${SESSION_ID}`)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setMessages(parsed)
+      } catch(_) {}
+    } else {
+      setMessages([{
+        id: uuid(),
+        role: 'assistant',
+        content: `**Welcome to GFXTAB AI Studio** 🎨\n\nI'm your dedicated creative AI — built for designers, creators, and brand builders.\n\n**What can I help you create?**\n• Logos & brand identities\n• YouTube thumbnails & banners\n• Social media visuals & reels\n• UI/UX design concepts\n• Color palettes & typography\n• Scripts & creative copy\n\n*Start by describing what you want to build. The more context, the better the output.*`,
+        isComplete: true
+      }])
+    }
   }, [])
 
   const notify = (text, type = 'success') => {
@@ -349,30 +358,28 @@ export default function AIStudio() {
     setTimeout(() => setNotification(null), 3000)
   }
 
+
   const generateImage = useCallback(async (prompt) => {
     if (isGeneratingImage) return
     setIsGeneratingImage(true)
     setVariants([])
 
-    try {
-      const res = await fetch(`${API_BASE}/generate/image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, sessionId: SESSION_ID })
-      })
-      const data = await res.json()
-      if (data.variants?.length > 0) {
-        setVariants(data.variants)
-        setSelectedVariant(data.variants[0])
-        setAllImages(prev => [...prev, ...data.variants])
-        notify(`✨ ${data.variants.length} variants generated!`)
-      }
-    } catch (err) {
-      notify('Image generation failed. Check backend.', 'error')
-    } finally {
-      setIsGeneratingImage(false)
+    // Gemini can't generate real images directly, so we create a visual suggestion card
+    const placeholder = {
+      id: uuid(),
+      name: `AI Concept — ${prompt.slice(0, 30)}`,
+      url: `https://via.placeholder.com/800x800/0A0A0F/c8ff00?text=AI+Concept+Ready`,
+      palette: ['#0A0A0F', '#c8ff00', '#8b5cf6', '#06b6d4']
     }
+    setTimeout(() => {
+      setVariants([placeholder])
+      setSelectedVariant(placeholder)
+      setAllImages(prev => [...prev, placeholder])
+      notify('✨ Concept visualization ready!')
+      setIsGeneratingImage(false)
+    }, 1200)
   }, [isGeneratingImage])
+
 
   const sendMessage = useCallback(async () => {
     const text = input.trim()
@@ -383,86 +390,74 @@ export default function AIStudio() {
     setInput('')
     setIsStreaming(true)
 
-    const userMsg = { id: userMsgId, role: 'user', content: text, isComplete: true }
-    setMessages(prev => [...prev, userMsg])
+    const intent = detectIntent(text)
+    const userMsg = { id: userMsgId, role: 'user', content: text, intent, isComplete: true }
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
 
     // Placeholder AI message
-    const aiMsg = {
-      id: aiMsgId, role: 'assistant', content: '', intent: null,
-      needsImage: false, engineeredPrompt: null, isComplete: false
-    }
+    const aiMsg = { id: aiMsgId, role: 'assistant', content: '', intent, needsImage: false, engineeredPrompt: null, isComplete: false }
     setMessages(prev => [...prev, aiMsg])
 
     try {
-      const res = await fetch(`${API_BASE}/chat/stream`, {
+      // Build conversation history for Gemini
+      const contents = newMessages
+        .filter(m => m.content)
+        .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+
+      const res = await fetch(GEMINI_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, sessionId: SESSION_ID }),
-        signal: abortRef.current?.signal
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          generationConfig: { temperature: 0.9, maxOutputTokens: 2048 }
+        })
       })
 
-      if (!res.body) throw new Error('No stream body')
+      const data = await res.json()
 
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let accText = ''
-      let meta = {}
+      if (!res.ok) {
+        throw new Error(data.error?.message || `API error ${res.status}`)
+      }
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.'
 
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop()
+      // Simulate typewriter effect
+      let displayed = ''
+      const words = reply.split(' ')
+      for (let i = 0; i < words.length; i++) {
+        displayed += (i > 0 ? ' ' : '') + words[i]
+        const snap = displayed
+        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: snap } : m))
+        if (i % 5 === 0) await new Promise(r => setTimeout(r, 20))
+      }
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          try {
-            const event = JSON.parse(line.slice(6))
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, isComplete: true, needsImage: intent === 'generate' } : m))
 
-            if (event.type === 'meta') {
-              meta = event
-              setMessages(prev => prev.map(m =>
-                m.id === aiMsgId ? { ...m, intent: event.intent, needsImage: event.needsImage, engineeredPrompt: event.engineeredPrompt } : m
-              ))
-            } else if (event.type === 'token') {
-              accText += event.text
-              const snapshot = accText
-              setMessages(prev => prev.map(m =>
-                m.id === aiMsgId ? { ...m, content: snapshot } : m
-              ))
-            } else if (event.type === 'done') {
-              if (event.memory) setMemory(event.memory)
-              setMessages(prev => prev.map(m =>
-                m.id === aiMsgId
-                  ? {
-                      ...m, isComplete: true,
-                      onGenerate: meta.needsImage ? () => generateImage(text) : undefined
-                    }
-                  : m
-              ))
-              // Auto-generate image if intent detected
-              if (meta.needsImage) {
-                setTimeout(() => generateImage(text), 500)
-              }
-            }
-          } catch (_) {}
-        }
+      // Save to localStorage
+      const updated = [...newMessages, { id: aiMsgId, role: 'assistant', content: reply, intent, isComplete: true }]
+      localStorage.setItem(`gfxtab_chat_${SESSION_ID}`, JSON.stringify(updated.slice(-30)))
+
+      // Update memory
+      const newMem = { ...memory }
+      if (text.toLowerCase().includes('brand')) newMem.brand = text.slice(0, 60)
+      if (text.toLowerCase().includes('color')) newMem.color_preference = text.slice(0, 40)
+      if (text.toLowerCase().includes('style')) newMem.style = text.slice(0, 40)
+      setMemory(newMem)
+
+      if (intent === 'generate') {
+        setTimeout(() => generateImage(text), 600)
       }
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        setMessages(prev => prev.map(m =>
-          m.id === aiMsgId
-            ? { ...m, content: 'Connection error. Please ensure the backend is running on port 4000.', isComplete: true }
-            : m
-        ))
-      }
+      const errMsg = err.message?.includes('API_KEY') || err.message?.includes('401')
+        ? '⚠️ API key issue. Please check GFXTAB AI Studio configuration.'
+        : `⚠️ ${err.message || 'Network error. Please try again.'}`
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: errMsg, isComplete: true } : m))
     } finally {
       setIsStreaming(false)
     }
-  }, [input, isStreaming, generateImage])
+  }, [input, isStreaming, generateImage, messages, memory])
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -471,16 +466,9 @@ export default function AIStudio() {
     }
   }
 
-  const clearSession = async () => {
-    try {
-      await fetch(`${API_BASE}/chat/session/${SESSION_ID}`, { method: 'DELETE' })
-    } catch (_) {}
-    setMessages([{
-      id: uuid(),
-      role: 'assistant',
-      content: `**Session cleared.** Fresh start! What are we creating today?`,
-      isComplete: true
-    }])
+  const clearSession = () => {
+    localStorage.removeItem(`gfxtab_chat_${SESSION_ID}`)
+    setMessages([{ id: uuid(), role: 'assistant', content: `**Session cleared.** Fresh start! What are we creating today?`, isComplete: true }])
     setMemory({})
     setVariants([])
     setSelectedVariant(null)

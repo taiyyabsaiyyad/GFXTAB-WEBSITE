@@ -17,22 +17,15 @@ export default function Library() {
   const [fontsList, setFontsList] = useState([])
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      try {
-        await fetchDownloads()
-        // Fetch fonts list to inject font-faces
-        const res = await fetch('http://localhost:4000/fonts/list')
-        const data = await res.json()
-        if (data.success) {
-          setFontsList(data.fonts || [])
-        }
-      } catch (e) {
-        console.error(e)
-      }
-      setLoading(false)
+    // Load from localStorage immediately (no backend timeout)
+    setLoading(true)
+    try {
+      fetchDownloads()
+    } catch (e) {
+      console.error(e)
     }
-    loadData()
+    // Always resolve quickly
+    setTimeout(() => setLoading(false), 400)
   }, [fetchDownloads])
 
   const handleRedownload = (dl) => {

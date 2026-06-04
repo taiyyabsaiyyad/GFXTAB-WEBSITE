@@ -19,6 +19,7 @@ import Collections from '@/pages/Collections.jsx'
 import Contact from '@/pages/Contact.jsx'
 import AIStudio from '@/pages/AIStudio.jsx'
 import NotFound from '@/pages/NotFound.jsx'
+import Analytics from '@/pages/Analytics.jsx'
 
 
 // Auth guard
@@ -177,6 +178,15 @@ export default function App() {
           }
         />
 
+
+        <Route
+          path="/analytics"
+          element={
+            <PrivateRoute>
+              <AuthenticatedLayout><Analytics /></AuthenticatedLayout>
+            </PrivateRoute>
+          }
+        />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFound />} />

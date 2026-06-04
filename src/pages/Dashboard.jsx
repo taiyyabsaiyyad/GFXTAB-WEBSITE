@@ -33,6 +33,16 @@ const MOCK_PHOTOS = [
   { id: 'photo-2', name: 'Minimalist Clay Pots Still Life', category: 'photos', description: 'Elegant commercial photo of textured ceramic vases in warm natural light.', previewAsset: 'Photo from GFXTAB(32).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'interior', 'minimalist'] },
   { id: 'photo-3', name: 'Cyberpunk Neon Street Art (AI)', category: 'photos', description: 'Stunning futuristic night photograph of neon-lit Tokyo street signs.', previewAsset: 'Photo from GFXTAB(33).jpg', isPremium: false, price: 0, isAi: true, tags: ['photo', 'cyberpunk', 'neon', 'ai'] },
   { id: 'photo-4', name: 'Surreal Organic Landscape (AI)', category: 'photos', description: 'Dreamy visual illustration depicting futuristic glowing desert dunes.', previewAsset: 'Photo from GFXTAB(34).jpg', isPremium: false, price: 0, isAi: true, tags: ['photo', 'surreal', 'landscape', 'ai'] },
+  { id: 'photo-5', name: 'Branding Identity Setup', category: 'photos', description: 'Premium flat-lay mockup for brand identity and stationery presentation.', previewAsset: 'Photo from GFXTAB(35).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'branding', 'flatlay'] },
+  { id: 'photo-6', name: 'Business Card Mockup Shoot', category: 'photos', description: 'Clean photographic mockup for business cards on textured surface.', previewAsset: 'Photo from GFXTAB(2).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'business', 'card'] },
+  { id: 'photo-7', name: 'Packaging Lifestyle Shot', category: 'photos', description: 'Real product lifestyle photography of premium packaging in natural setting.', previewAsset: 'Photo from GFXTAB(3).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'packaging', 'lifestyle'] },
+  { id: 'photo-8', name: 'Minimal Desk Aesthetic', category: 'photos', description: 'High-contrast minimal desk setup with tech accessories.', previewAsset: 'Photo from GFXTAB(5).jpg', isPremium: false, price: 0, isAi: false, tags: ['photo', 'desk', 'minimal'] },
+]
+
+const MOCK_PNG_ASSETS = [
+  { id: 'png-1', name: 'Transparent T-Shirt Mockup PNG', category: 'png', description: 'High-res transparent background t-shirt mockup with no clipping masks.', previewAsset: '01_Mockup.png', isPremium: false, price: 0, file: '01_Mockup.png', tags: ['png', 'tshirt', 'transparent', 'mockup'] },
+  { id: 'png-2', name: 'Kiddicare Nappy Packaging PNG', category: 'png', description: 'Product photography quality nappy packaging transparent PNG.', previewAsset: 'Kiddicare Nappy Pant mockup.png', isPremium: false, price: 0, file: 'Kiddicare Nappy Pant mockup.png', tags: ['png', 'packaging', 'product', 'transparent'] },
+  { id: 'png-3', name: 'GFXTAB Brand Logo PNG', category: 'png', description: 'Official GFXTAB wordmark on transparent background — ready for use.', previewAsset: null, isPremium: false, price: 0, logoText: 'GFXTAB', tags: ['png', 'logo', 'brand', 'transparent'] },
 ]
 
 const MOCK_MAILERS = [
@@ -58,13 +68,15 @@ export default function Dashboard() {
   const { customAssets } = useMarketplaceStore()
   
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'web_ui') // Set category from redirect state if available
+  const [searchInput, setSearchInput] = useState('') // for live typing
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(location.state?.category || 'web_ui')
   const [sortBy, setSortBy] = useState('trending')
   const [previewText, setPreviewText] = useState('Grumpy wizards make toxic brew for the evil queen')
   const [photosAiOnly, setPhotosAiOnly] = useState(false)
   
   const [vectorsList, setVectorsList] = useState([])
-  const [fontsList, setFontsList] = useState([])
+  const [fontsList, setFontsList] = useState(MOCK_FONTS)
   const [iconsList, setIconsList] = useState([])
   const [templatesList, setTemplatesList] = useState([])
   const [loading, setLoading] = useState(false)
@@ -102,29 +114,14 @@ export default function Dashboard() {
     }
   }, [selectedCategory])
 
-  // Fetch fonts dynamically from local backend if selected
+  // Fonts are loaded from the extended MOCK_FONTS list (Google Fonts based)
   useEffect(() => {
     if (selectedCategory === 'fonts') {
       setLoading(true)
       setErrorMsg('')
-      fetch('http://localhost:4000/fonts/list')
-        .then((res) => {
-          if (!res.ok) throw new Error('API server returned error')
-          return res.json()
-        })
-        .then((data) => {
-          if (data.success) {
-            setFontsList(data.fonts || [])
-          } else {
-            throw new Error(data.message || 'Failed to fetch')
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-          setErrorMsg('Failed to load local fonts directory from backend. Running client fallback.')
-          setFontsList(MOCK_FONTS)
-        })
-        .finally(() => setLoading(false))
+      // Use extended local mock font list — no backend required
+      setFontsList(MOCK_FONTS)
+      setLoading(false)
     }
   }, [selectedCategory])
 
@@ -186,7 +183,7 @@ export default function Dashboard() {
         baseList = []
         break
       case 'vectors':
-        baseList = [] // Empty for inquiry default, as requested in Audio 1
+        baseList = [] // Empty — inquiry only
         break
       case 'fonts':
         baseList = fontsList.length > 0 ? fontsList : MOCK_FONTS
@@ -195,13 +192,16 @@ export default function Dashboard() {
         baseList = []
         break
       case 'photos':
-        baseList = []
+        baseList = photosAiOnly ? MOCK_PHOTOS.filter(p => p.isAi) : MOCK_PHOTOS
+        break
+      case 'png':
+        baseList = MOCK_PNG_ASSETS
         break
       case 'mailers':
-        baseList = []
+        baseList = MOCK_MAILERS
         break
       case 'mockups':
-        baseList = PRODUCTS.filter(p => p.category !== 'apparel' && p.category !== 'print')
+        baseList = [] // Empty — inquiry only
         break
       case 'logos':
         baseList = []
@@ -221,6 +221,23 @@ export default function Dashboard() {
     const categoryCustoms = customAssets ? customAssets.filter(asset => asset.category === selectedCategory) : []
     return [...categoryCustoms, ...baseList]
   }
+
+  // All items for cross-category search
+  const getAllItems = () => [
+    ...MOCK_PHOTOS, ...MOCK_PNG_ASSETS, ...MOCK_MAILERS, ...MOCK_LOGOS,
+    ...MOCK_SOCIAL_POSTS, ...MOCK_FREEBIES, ...PRODUCTS, ...MOCK_FONTS,
+    ...(customAssets || [])
+  ]
+
+  // Live search suggestions
+  const searchSuggestions = searchInput.trim().length > 1
+    ? getAllItems().filter(item => {
+        const q = searchInput.toLowerCase()
+        return (item.name || '').toLowerCase().includes(q) ||
+               (item.tags || []).some(t => t.includes(q)) ||
+               (item.description || '').toLowerCase().includes(q)
+      }).slice(0, 8)
+    : []
 
   // Filter & Sort list
   const getFilteredList = () => {
@@ -293,28 +310,75 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Centered Global Search Bar */}
+        {/* Ultra-Smart Search Bar */}
         <div style={{
-          display: 'flex', gap: 12, width: '100%', maxWidth: 720, marginTop: 'var(--space-6)',
+          display: 'flex', gap: 12, width: '100%', maxWidth: 780, marginTop: 'var(--space-6)',
           position: 'relative', zIndex: 5, justifyContent: 'center'
         }}>
           <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-            <input 
-              type="text" 
-              placeholder={`Search ${selectedCategory.replace('_', ' ')} (e.g. bold, sans, stationery)...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--lime)', zIndex: 1 }} />
+            <input
+              type="text"
+              id="marketplace-search"
+              placeholder={`Search anything — fonts, logos, mockups, photos...`}
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setShowSearchDropdown(true) }}
+              onFocus={() => setShowSearchDropdown(true)}
+              onBlur={() => setTimeout(() => setShowSearchDropdown(false), 180)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { setSearchQuery(searchInput); setShowSearchDropdown(false) } }}
               style={{
                 width: '100%', padding: '16px 16px 16px 48px',
                 borderRadius: 'var(--radius-md)', background: 'var(--void-2)',
-                border: '1px solid var(--glass-border)', color: 'var(--text-primary)',
-                fontSize: 'var(--text-base)', boxShadow: 'var(--glow-card)'
+                border: '1.5px solid', borderColor: searchInput ? 'var(--lime)' : 'var(--glass-border)',
+                color: 'var(--text-primary)', fontSize: 'var(--text-base)',
+                boxShadow: searchInput ? '0 0 16px rgba(200,255,0,0.18), var(--glow-card)' : 'var(--glow-card)',
+                transition: 'all 0.2s var(--spring)'
               }}
             />
+            {/* Live suggestion dropdown */}
+            {showSearchDropdown && searchSuggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
+                background: 'var(--void-3)', border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-md)', zIndex: 50, overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
+              }}>
+                {searchSuggestions.map(item => (
+                  <button key={item.id} onMouseDown={() => {
+                    setSearchInput(item.name)
+                    setSearchQuery(item.name)
+                    setShowSearchDropdown(false)
+                    if (item.category) setSelectedCategory(item.category)
+                  }} style={{
+                    width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none',
+                    border: 'none', borderBottom: '1px solid var(--glass-border)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-primary)'
+                  }}>
+                    <Search size={14} style={{ color: 'var(--lime)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{item.name}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 'auto' }}>{(item.category || '').replace('_', ' ')}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <GlowButton onClick={() => navigate('/upload')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 24px' }}>
-            <Sparkles size={16} /> AI Mockup Generator
+          {/* Search Button */}
+          <button
+            onClick={() => { setSearchQuery(searchInput); setShowSearchDropdown(false) }}
+            style={{
+              padding: '0 20px', borderRadius: 'var(--radius-md)',
+              background: 'var(--void-3)', border: '1.5px solid var(--glass-border)',
+              color: 'var(--text-primary)', fontSize: 'var(--text-sm)', fontWeight: 600,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+              transition: 'all 0.2s', whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--lime)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--glass-border)'}
+          >
+            <Search size={15} /> Search
+          </button>
+          <GlowButton onClick={() => navigate('/ai-studio')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 20px', whiteSpace: 'nowrap' }}>
+            <Sparkles size={16} /> GFXTAB AI Generator
           </GlowButton>
         </div>
       </div>
@@ -327,6 +391,7 @@ export default function Dashboard() {
           { id: 'vectors', label: 'Vectors (EPS)' },
           { id: 'icons', label: 'Icons' },
           { id: 'photos', label: 'Photos & Images' },
+          { id: 'png', label: '📌 PNG Assets' },
           { id: 'mailers', label: 'Mailers & Invites' },
           { id: 'mockups', label: 'Mockups' },
           { id: 'logos', label: 'Logos' },
@@ -336,17 +401,17 @@ export default function Dashboard() {
         ].map((cat) => (
           <motion.button
             key={cat.id}
-            onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); }}
-            whileHover={{ scale: 1.05, borderColor: 'var(--lime)', boxShadow: '0 0 10px rgba(200, 255, 0, 0.2)' }}
+            onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); setSearchInput('') }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             style={{
               padding: '10px 18px', borderRadius: 'var(--radius-full)',
               background: selectedCategory === cat.id ? 'rgba(200, 255, 0, 0.15)' : 'var(--void-3)',
-              border: '1px solid', borderColor: selectedCategory === cat.id ? 'var(--lime)' : 'var(--glass-border)',
+              border: '1.5px solid', borderColor: selectedCategory === cat.id ? 'var(--lime)' : 'rgba(255,255,255,0.1)',
               color: selectedCategory === cat.id ? 'var(--lime)' : '#e4e4e7',
               fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 8,
               cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s var(--spring)',
-              boxShadow: selectedCategory === cat.id ? '0 0 15px rgba(200, 255, 0, 0.3)' : 'none',
+              boxShadow: selectedCategory === cat.id ? '0 0 18px rgba(200, 255, 0, 0.35), inset 0 0 8px rgba(200,255,0,0.05)' : 'none',
               fontWeight: selectedCategory === cat.id ? 600 : 400
             }}
           >
@@ -409,10 +474,12 @@ export default function Dashboard() {
         </span>
       </div>
 
-      {/* Backend error warning */}
-      {errorMsg && (
-        <div style={{ padding: '10px var(--space-4)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', color: 'var(--red)', fontSize: 'var(--text-xs)' }}>
-          ⚠️ {errorMsg}
+      {/* AI Generate Button row for applicable categories */}
+      {['photos', 'png', 'icons', 'logos', 'mailers', 'social_posts', 'web_ui'].includes(selectedCategory) && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8 }}>
+          <GlowButton onClick={() => navigate('/ai-studio')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', fontSize: 'var(--text-sm)' }}>
+            <Sparkles size={14} /> AI Generate {selectedCategory.replace('_', ' ')}
+          </GlowButton>
         </div>
       )}
 
@@ -508,9 +575,9 @@ export default function Dashboard() {
                     icon: '🖥️'
                   },
                   vectors: {
-                    title: 'No Vector EPS Stocks',
-                    desc: 'The vector catalog has no active items on shelf. You can request customized scalable vector graphics or logo files.',
-                    btn: 'Request vector file creation',
+                    title: 'No Mockup Templates',
+                    desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
+                    btn: 'Inquire for Mockup design',
                     icon: '📐'
                   },
                   icons: {
@@ -533,8 +600,8 @@ export default function Dashboard() {
                   },
                   logos: {
                     title: 'No Brand Logo Templates',
-                    desc: 'Minimal brand identity and logo templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
-                    btn: 'Inquire for logo design',
+                    desc: 'Minimal brand identity and Mockup templates are currently unstocked. Contact GFXTAB for custom brand mark creations.',
+                    btn: 'Inquire for Mockup design',
                     icon: '🪪'
                   }
                 }[selectedCategory] || {

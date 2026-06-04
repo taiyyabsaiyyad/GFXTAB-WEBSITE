@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Sparkles, FolderOpen, Library, Heart, Palette,
-  Settings, ChevronRight, Zap, Menu, X, Users, MessageSquare, Brain
+  Settings, ChevronRight, Zap, Menu, X, Users, MessageSquare, Brain, BarChart2
 } from 'lucide-react'
 import { useUIStore, useAuthStore } from '@/store/index.js'
 import Tooltip from '@/components/ui/Tooltip.jsx'
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { path: '/collections', icon: Heart,           label: 'Collections' },
   { path: '/brandkit',    icon: Palette,         label: 'Brand Kit' },
   { path: '/creator',     icon: Users,           label: 'Creator Panel' },
+  { path: '/analytics',   icon: BarChart2,       label: 'Analytics', badge: 'ADMIN' },
   { path: '/contact',     icon: MessageSquare,   label: 'Contact Us' },
   { path: '/settings',    icon: Settings,        label: 'Settings' },
 ]

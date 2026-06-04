@@ -16,6 +16,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install and Build 🔧
+        env:
+          VITE_GEMINI_KEY: ${{ secrets.VITE_GEMINI_KEY }}
         run: |
           npm ci --legacy-peer-deps
           npm run build

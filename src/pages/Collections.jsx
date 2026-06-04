@@ -8,6 +8,7 @@ import { FloatLabelInput } from '@/components/ui/Input.jsx'
 import { PRODUCTS } from '@/constants/products.js'
 import { notify } from '@/components/ui/Toast.jsx'
 import { useNavigate } from 'react-router-dom'
+import Tooltip from '@/components/ui/Tooltip.jsx'
 
 export default function Collections() {
   const navigate = useNavigate()

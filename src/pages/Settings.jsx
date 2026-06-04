@@ -48,7 +48,7 @@ export default function Settings() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-      style={{ maxWidth: 900 }}
+      style={{ maxWidth: 960, paddingBottom: 48 }}
     >
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', marginBottom: 'var(--space-8)' }}>
         Settings
@@ -96,7 +96,7 @@ export default function Settings() {
         </div>
 
         {/* Content */}
-        <div>
+        <div style={{ overflow: 'visible', minHeight: 0 }}>
           {activeSection === 'profile' && (
             <GlassCard hoverable={false}>
               <h3 style={{ marginBottom: 'var(--space-6)' }}>Profile Information</h3>
