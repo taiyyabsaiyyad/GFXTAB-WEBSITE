@@ -21,13 +21,16 @@ function getSession(sid) {
 
 // ── Prompt Engineering Engine ────────────────────────────────────
 const CREATIVE_ENHANCER = {
-  logo: 'ultra-realistic, luxury metallic sheen, award-winning logo design, masterclass composition, octane render, 8k, cinematic studio lighting, black background, hyperdetailed vector paths',
-  thumbnail: 'high click-through-rate YouTube thumbnail, bold typography, cinematic lighting, dramatic contrast, 4K ultra-sharp, attention-grabbing, professional graphic design',
-  banner: 'professional social media banner, eye-catching gradient background, high impact, modern minimalism, 4K, brand-safe, cohesive color story',
-  illustration: 'editorial concept illustration, dynamic pose, vector art style, vibrant color palette, professional digital art, studio quality, 4K',
-  poster: 'premium cinema-quality movie poster composition, dramatic lighting, rich textures, pro typography hierarchy, printable, 4K ultra HD',
-  ui: 'clean SaaS dashboard UI mockup, modern dark mode, glassmorphism card components, well-spaced layout, Figma-quality design, professional UX',
-  default: 'ultra high quality, professional creative asset, studio quality, premium output, sharp detail, award-winning production value'
+  logo: 'ultra-high-resolution luxury logo design, award-winning composition, masterclass brand identity, vector-perfect edges, dark background with dramatic studio lighting, professional designer output, Behance featured quality, 8K detail',
+  thumbnail: 'ultra-high click-through-rate YouTube thumbnail, bold cinematic typography, studio-quality lighting, extreme color contrast, hyper-attention-grabbing, 4K professional creative, tested for maximum CTR performance',
+  banner: 'professional brand banner, bold gradient identity, premium layout structure, pixel-perfect alignment, high-impact visual hierarchy, modern brand standards, 4K sharp output',
+  illustration: 'editorial concept illustration, expressive dynamic composition, vibrant brand-safe palette, professional digital art with vector-clean output, studio-quality render, featured on Artstation quality',
+  poster: 'cinema-quality poster composition, dramatic directional lighting, rich material textures, expert typographic hierarchy, printable 300dpi quality, award-winning visual design',
+  ui: 'premium SaaS UI design, clean dark-mode glassmorphism, well-spaced component hierarchy, Figma-quality design system, professional UX layout, linear/vercel aesthetic level',
+  photo: 'ultra-realistic commercial photograph, professional studio lighting, editorial quality, 8K resolution, clean product hero shot',
+  social: 'high-converting social media creative, thumb-stopping visual hook, brand-consistent identity, modern graphic design quality, Instagram/LinkedIn premium aesthetic',
+  brand: 'comprehensive brand identity system, complete visual language, professional brand guide output, strategic design thinking applied, market-competitive identity design',
+  default: 'ultra high quality, professional creative asset, award-winning design output, studio quality, 8K detail, premium brand production value'
 }
 
 function engineerPrompt(userPrompt, intent, memory) {
@@ -35,49 +38,58 @@ function engineerPrompt(userPrompt, intent, memory) {
   const enhancer = CREATIVE_ENHANCER[intent] || CREATIVE_ENHANCER.default
   const brandCtx = memory.brand ? `, brand: ${memory.brand}` : ''
   const styleCtx = memory.style ? `, style: ${memory.style}` : ''
-  return `${base}${brandCtx}${styleCtx}. ${enhancer}`
+  const industryCtx = memory.industry ? `, industry: ${memory.industry}` : ''
+  const colorCtx = memory.colorPrefs ? `, color direction: ${memory.colorPrefs}` : ''
+  return `${base}${brandCtx}${styleCtx}${industryCtx}${colorCtx}. ${enhancer}`
 }
 
 // ── Intent Classifier ────────────────────────────────────────────
 function classifyIntent(message) {
   const m = message.toLowerCase()
-  if (/(logo|brand mark|wordmark|identity|emblem)/.test(m)) return { type: 'logo', needsImage: true }
-  if (/(thumbnail|youtube|yt thumb)/.test(m)) return { type: 'thumbnail', needsImage: true }
-  if (/(banner|cover|header|og image)/.test(m)) return { type: 'banner', needsImage: true }
-  if (/(illustration|drawing|artwork|concept art)/.test(m)) return { type: 'illustration', needsImage: true }
-  if (/(poster|flyer|print)/.test(m)) return { type: 'poster', needsImage: true }
-  if (/(ui|interface|dashboard|app design|website design|screen)/.test(m)) return { type: 'ui', needsImage: true }
-  if (/(photo|photograph|realistic|product shot)/.test(m)) return { type: 'photo', needsImage: true }
-  if (/(script|reel|video|caption|content|copy|text)/.test(m)) return { type: 'copy', needsImage: false }
-  if (/(color|palette|swatch|hex|rgb)/.test(m)) return { type: 'palette', needsImage: false }
-  if (/(font|typography|typeface)/.test(m)) return { type: 'typography', needsImage: false }
+  if (/(logo|brand mark|wordmark|identity|emblem|monogram|logotype|logomark)/.test(m)) return { type: 'logo', needsImage: true }
+  if (/(thumbnail|youtube|yt thumb|channel art)/.test(m)) return { type: 'thumbnail', needsImage: true }
+  if (/(banner|cover|header|og image|hero image|linkedin banner|twitter header)/.test(m)) return { type: 'banner', needsImage: true }
+  if (/(illustration|drawing|artwork|concept art|digital art|sketch)/.test(m)) return { type: 'illustration', needsImage: true }
+  if (/(poster|flyer|print|leaflet|brochure)/.test(m)) return { type: 'poster', needsImage: true }
+  if (/(ui|interface|dashboard|app design|website design|screen|wireframe|saas)/.test(m)) return { type: 'ui', needsImage: true }
+  if (/(photo|photograph|realistic|product shot|mockup|render)/.test(m)) return { type: 'photo', needsImage: true }
+  if (/(social|instagram|reel|story|post|tiktok|linkedin|twitter|facebook)/.test(m)) return { type: 'social', needsImage: true }
+  if (/(brand kit|brand guide|brand system|visual identity|brand strategy)/.test(m)) return { type: 'brand', needsImage: false }
+  if (/(script|reel|video|caption|content|copy|text|tagline|slogan|headline)/.test(m)) return { type: 'copy', needsImage: false }
+  if (/(color|colour|palette|swatch|hex|rgb|gradient|scheme)/.test(m)) return { type: 'palette', needsImage: false }
+  if (/(font|typography|typeface|lettering|type system)/.test(m)) return { type: 'typography', needsImage: false }
   return { type: 'chat', needsImage: false }
 }
 
+
 // ── System Prompt Builder ─────────────────────────────────────────
 function buildSystemPrompt(memory) {
-  const name = memory.userName ? `User's name: ${memory.userName}.` : ''
-  const brand = memory.brand ? `Their brand is: ${memory.brand}.` : ''
-  const style = memory.style ? `Their preferred style: ${memory.style}.` : ''
-  const project = memory.recentProject ? `Recent project: ${memory.recentProject}.` : ''
+  const name = memory.userName ? `The user's name is ${memory.userName}.` : ''
+  const brand = memory.brand ? `Their brand is: "${memory.brand}".` : ''
+  const style = memory.style ? `Their preferred design style: ${memory.style}.` : ''
+  const industry = memory.industry ? `Their industry: ${memory.industry}.` : ''
+  const project = memory.recentProject ? `Most recent project type: ${memory.recentProject}.` : ''
+  const colorPrefs = memory.colorPrefs ? `Color preferences: ${memory.colorPrefs}.` : ''
 
-  return `You are GFXTAB AI Studio — the world's most advanced creative design assistant for designers, creators, and brand builders. You are a combination of ChatGPT, Midjourney, and a senior creative director with 20 years of experience.
+  return `You are GFXTAB AI Studio — the world's most advanced AI creative partner, built by GFXTAB Productions.
 
-${name} ${brand} ${style} ${project}
+You combine the intelligence of: a senior creative director (20yr agency experience), a world-class brand strategist (Pentagram/Collins level), a top Midjourney prompt engineer, a conversion copywriting expert, and a UI/UX systems designer (Linear/Vercel/Stripe level quality).
 
-Your behavior rules:
-1. NEVER give generic, repetitive, or template responses. Every reply must be unique and tailored to this user's exact context.
-2. Understand creative intent deeply. If a user says "make a logo", understand their brand, audience, style, and purpose before generating.
-3. When working on design tasks, first acknowledge the goal, optionally ask 1–2 highly relevant clarifying questions (never more), then proceed to generate.
-4. For image generation tasks, internally construct a detailed, engineered prompt and show it to the user in a "Prompt Used" block.
-5. Think in layers: Intent → Planning → Clarify if needed → Enhance prompt → Generate → Evaluate → Respond.
-6. Use Markdown for structure. Use **bold** for key terms, bullet lists for options, and code blocks for prompts.
-7. Always remember context from the conversation. Don't repeat yourself. Build on what was said before.
-8. You specialize in: logos, thumbnails, social media posts, UI/UX design, branding, motion graphics, photography, illustration, copywriting for designers.
-9. Personality: Confident, brilliant, fast, creative. Like working with the best designer you've ever met.
-10. If asked to generate an image, provide: (a) a creative brief summary, (b) the engineered prompt you used, (c) the generated result or a clear indication it's being generated.
-11. Give concise but impactful responses. Never be verbose.`
+User context — always apply: ${name} ${brand} ${style} ${industry} ${project} ${colorPrefs}
+
+Rules:
+1. NEVER give generic or repetitive responses. Every reply is uniquely crafted for this exact user.
+2. Read deep creative intent. "Make a logo" means: understand industry, audience, emotion, style — THEN generate.
+3. Think: Intent → Brand Context → Strategy → Creative Direction → Execution → Generate.
+4. Use Markdown beautifully: **bold** for emphasis, bullet lists, code blocks for hex/prompts, headers for sections.
+5. Personality: Confident, creative, fast, precise. Like the best designer they've ever worked with.
+6. For image tasks: share (a) creative strategy, (b) engineered prompt used, (c) what they'll receive.
+7. Remember EVERYTHING. Build on context. Never repeat yourself. Grow the session.
+8. Give 2-3 strategic options with brief rationale, then proceed with the best one.
+9. High signal-to-noise. No filler. Every word earns its place.
+10. Output quality: $500/hour creative director, not a chatbot.`
 }
+
 
 // ── Gemini Streaming Chat ─────────────────────────────────────────
 router.post('/chat/stream', async (req, res) => {
@@ -96,14 +108,17 @@ router.post('/chat/stream', async (req, res) => {
   const session = getSession(sessionId)
   const intent = classifyIntent(message)
 
-  // Update memory from message
-  const nameMatch = message.match(/(?:i'm|i am|my name is|call me)\s+([A-Za-z]+)/i)
+  // Update memory from message — extract rich context
+  const nameMatch = message.match(/(?:i'm|i am|my name is|call me|i go by)\s+([A-Za-z]+)/i)
   if (nameMatch) session.memory.userName = nameMatch[1]
-  const brandMatch = message.match(/(?:brand|company|called|named?)\s+([A-Za-z0-9]+)/i)
-  if (brandMatch) session.memory.brand = brandMatch[1]
-  const styleMatch = message.match(/\b(minimalist|luxury|futuristic|cyberpunk|retro|vintage|modern|bold|elegant|playful)\b/i)
+  const brandMatch = message.match(/(?:my brand|my company|brand is|company is|called|named|brand name is|startup is)\s+([A-Za-z0-9\s]+?)(?:\.|,|$)/i)
+  if (brandMatch) session.memory.brand = brandMatch[1].trim().slice(0, 40)
+  const styleMatch = message.match(/\b(minimalist|luxury|futuristic|cyberpunk|retro|vintage|modern|bold|elegant|playful|brutalist|flat|corporate|streetwear|editorial)\b/i)
   if (styleMatch) session.memory.style = styleMatch[1]
+  const industryMatch = message.match(/\b(fashion|tech|food|fitness|beauty|gaming|music|education|finance|health|real estate|automotive|crypto|nft|web3|saas|ecommerce|agency)\b/i)
+  if (industryMatch) session.memory.industry = industryMatch[1]
   if (intent.type !== 'chat') session.memory.recentProject = intent.type
+
 
   // Build conversation history for Gemini
   const systemPrompt = buildSystemPrompt(session.memory)
@@ -194,20 +209,21 @@ async function simulatedStream(req, res, message, sessionId, isError = false) {
   const session = getSession(sessionId)
   const intent = classifyIntent(message)
 
-  // Update memory
-  const nameMatch = message.match(/(?:i'm|i am|my name is|call me)\s+([A-Za-z]+)/i)
+  // Rich memory extraction
+  const nameMatch = message.match(/(?:i'm|i am|my name is|call me|i go by)\s+([A-Za-z]+)/i)
   if (nameMatch) session.memory.userName = nameMatch[1]
-  const brandMatch = message.match(/(?:brand|company|called|named?)\s+([A-Za-z0-9]+)/i)
-  if (brandMatch) session.memory.brand = brandMatch[1]
-  const styleMatch = message.match(/\b(minimalist|luxury|futuristic|cyberpunk|retro|vintage|modern|bold|elegant|playful)\b/i)
+  const brandMatch = message.match(/(?:my brand|my company|brand is|company is|called|named|brand name is|startup is)\s+([A-Za-z0-9\s]+?)(?:\.|,|$)/i)
+  if (brandMatch) session.memory.brand = brandMatch[1].trim().slice(0, 40)
+  const styleMatch = message.match(/\b(minimalist|luxury|futuristic|cyberpunk|retro|vintage|modern|bold|elegant|playful|brutalist|flat|corporate|streetwear|editorial)\b/i)
   if (styleMatch) session.memory.style = styleMatch[1]
+  const industryMatch = message.match(/\b(fashion|tech|food|fitness|beauty|gaming|music|education|finance|health|automotive|crypto|saas|ecommerce|agency)\b/i)
+  if (industryMatch) session.memory.industry = industryMatch[1]
   if (intent.type !== 'chat') session.memory.recentProject = intent.type
 
   const engineeredPrompt = intent.needsImage ? engineerPrompt(message, intent.type, session.memory) : null
   const mem = session.memory
 
-  // Generate context-aware dynamic response
-  const responses = generateDynamicResponse(message, intent, mem, session.history)
+  const response = generateDynamicResponse(message, intent, mem, session.history)
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
@@ -216,14 +232,14 @@ async function simulatedStream(req, res, message, sessionId, isError = false) {
 
   res.write(`data: ${JSON.stringify({ type: 'meta', intent: intent.type, needsImage: intent.needsImage, engineeredPrompt })}\n\n`)
 
-  // Simulate token-by-token streaming
-  const words = responses.split(' ')
+  // Realistic token-by-token streaming
+  const words = response.split(' ')
   let fullText = ''
   for (let i = 0; i < words.length; i++) {
     const chunk = (i === 0 ? '' : ' ') + words[i]
     fullText += chunk
     res.write(`data: ${JSON.stringify({ type: 'token', text: chunk })}\n\n`)
-    await new Promise(r => setTimeout(r, 18 + Math.random() * 20))
+    await new Promise(r => setTimeout(r, 10 + Math.random() * 14))
   }
 
   session.history.push({ role: 'user', content: message })
@@ -234,174 +250,106 @@ async function simulatedStream(req, res, message, sessionId, isError = false) {
   res.end()
 }
 
+// ── 6 Specialist Agent System ─────────────────────────────────────
 function generateDynamicResponse(message, intent, mem, history) {
   const m = message.toLowerCase()
-  const name = mem.userName || 'Creator'
+  const name = mem.userName || 'Creative'
   const brand = mem.brand || 'your brand'
-  const histLen = history.length
-  const prevIntent = history.length > 1 ? history[history.length - 2]?.content?.toLowerCase() : ''
+  const style = mem.style || null
+  const industry = mem.industry || null
+  const isFollowUp = history.length > 2
 
-  // Contextual awareness
-  const isFollowUp = histLen > 2
-  const prevWasImage = prevIntent && /(logo|thumbnail|banner|poster|illustration)/.test(prevIntent)
-
+  // ─ LOGO AGENT ─────────────────────────────────────────────────────
   if (intent.type === 'logo') {
-    const styles = ['Luxury Chrome', 'Cyberpunk Neon', 'Minimal Wordmark', 'Bold Geometric']
-    const shuffled = styles.sort(() => Math.random() - 0.5)
-    return `**Logo Design Brief Received** ${isFollowUp ? '— building on our session' : ''}
-
-Great, ${name}! I'm designing a logo for **${brand}**. Before I generate, let me nail the direction:
-
-**Which style resonates most?**
-• ${shuffled[0]}
-• ${shuffled[1]}
-• ${shuffled[2]}
-• ${shuffled[3]}
-
-**Do you need:**
-☐ Icon only
-☐ Wordmark only
-☑ Full logo suite (icon + wordmark + variations)
-
-**Brand personality** (pick 1–2):
-• Sophisticated & Luxury
-• Bold & Disruptive
-• Clean & Corporate
-• Creative & Playful
-
-Reply with your choices and I'll immediately generate 4 professional variations — each with a transparent PNG, color palette, and brand usage guide.`
+    const styleOpts = style
+      ? [`${style.charAt(0).toUpperCase() + style.slice(1)} (your preferred style)`, 'Geometric minimal wordmark', 'Luxury emblem with monogram', 'Dynamic icon + type lockup']
+      : ['Geometric minimal wordmark', 'Luxury metallic emblem', 'Bold typographic mark', 'Abstract dynamic symbol']
+    const industryLine = industry ? `\n\n> 💡 **${industry} insight:** ${getIndustryInsight(industry)}` : ''
+    return `**GFXTAB Logo Agent** — Activated for **${brand}**${isFollowUp ? ' (continuing session)' : ''}\n\n**Strategic Design Directions:**\n• **Option A** — ${styleOpts[0]}\n• **Option B** — ${styleOpts[1]}\n• **Option C** — ${styleOpts[2]}\n• **Option D** — ${styleOpts[3]}\n${industryLine}\n\n**To generate now, confirm:**\n1. Which direction excites you most?\n2. Output needed: \`Icon only\` / \`Wordmark only\` / \`Full suite (icon + wordmark + variants)\`\n3. Top 2 colors (or say "surprise me")\n\nI'll generate 4 professional variations with **engineered prompts**, **color palettes**, and **brand rationale** for each.`
   }
 
+  // ─ BRAND AGENT ────────────────────────────────────────────────────
+  if (intent.type === 'brand') {
+    return `**GFXTAB Brand Agent** — Full Identity System for **${brand}**\n\n**What I'll build:**\n\n**1. Brand Foundation**\n- Mission + brand voice definition\n- Target audience (3 archetypes)\n- Market positioning strategy\n\n**2. Visual Identity System**\n- Logo family (primary + secondary marks)\n- Color palette with WCAG ratios\n- Typography system (display + body)\n- Grid + spacing rules\n\n**3. Brand in Use**\n- Business card concept\n- Social media kit (profile + cover + post templates)\n- Email signature\n\n**Strategy question:** What is **${brand}**'s biggest competitor, and how do you want to be perceived differently?`
+  }
+
+  // ─ THUMBNAIL AGENT ────────────────────────────────────────────────
   if (intent.type === 'thumbnail') {
-    return `**YouTube Thumbnail Strategy — ${brand}**
-
-A high-converting thumbnail needs 3 elements working together: **emotion**, **contrast**, and **a clear subject**.
-
-Tell me:
-1. **Topic** — What is this video about?
-2. **Channel style** — (Example: MrBeast shock-face, minimalist tech, gaming drama)
-3. **Key text** — The 2–4 words that appear on the thumbnail
-
-Or just share the video title and I'll generate multiple CTR-optimized concepts.
-
-> 💡 *Thumbnails with human faces and large bold text consistently perform 40% better in A/B tests.*`
+    return `**GFXTAB Thumbnail Agent** — CTR Optimization for **${brand}**\n\n**High-CTR anatomy:**\n\n| Element | What Works | What Kills CTR |\n|---|---|---|\n| Face | High-emotion expression | No face / small face |\n| Text | 2–4 bold words | Full sentences |\n| Color | High contrast background | Same-tone palette |\n| Subject | Clear focal point | Cluttered layout |\n\n**For ${brand}, give me:**\n1. **Video topic** — What is this video actually about?\n2. **Channel style** — (MrBeast shock-face / calm tech / gaming chaos / finance authority)\n3. **Hook text** — The 2–4 words on the thumbnail\n\nI'll generate 3 layout compositions with CTR score predictions for each.\n\n> 💡 *Surprised face + bright color + 3-word text = 35–60% CTR in A/B tests.*`
   }
 
+  // ─ SOCIAL AGENT ───────────────────────────────────────────────────
+  if (intent.type === 'social' || intent.type === 'banner') {
+    const platform = m.includes('instagram') ? 'Instagram' : m.includes('linkedin') ? 'LinkedIn' : m.includes('twitter') ? 'X/Twitter' : m.includes('facebook') ? 'Facebook' : 'Social Media'
+    const dims = { 'Instagram': '1080×1080 (post) or 1080×1920 (story)', 'LinkedIn': '1200×627 (post)', 'X/Twitter': '1600×900 (post)', 'Facebook': '1200×630', 'Social Media': '1080×1080 (universal)' }
+    return `**GFXTAB Social Agent** — ${platform} Creative for **${brand}**\n\n**Dimensions:** \`${dims[platform] || dims['Social Media']}\`\n\n**3 Design Concepts:**\n\n**Concept 1: Brand Authority** — Clean bold layout, dominant mark, strong headline. *For announcements, launches.*\n\n**Concept 2: Visual Hook** — High-drama, bright accent explosion, emotion-led. *For promotions, viral moments.*\n\n**Concept 3: Editorial Grid** — Magazine-quality multi-element layout. *For product showcases, carousels.*\n\nWhich direction? Or say **"all three"** and I'll generate them all.`
+  }
+
+  // ─ UI AGENT ───────────────────────────────────────────────────────
   if (intent.type === 'ui') {
-    return `**UI/UX Design Request — ${brand}**
-
-I'll design a premium interface concept. To create something that's both beautiful and functional:
-
-**What are we designing?**
-• Dashboard / Analytics
-• Landing Page / Hero Section
-• Mobile App Screen
-• SaaS Product UI
-• E-commerce Storefront
-
-**Visual direction?**
-• Dark mode glassmorphism (Vercel-style)
-• Light minimal (Linear-style)
-• Bold gradient (Stripe-style)
-• Brutalist / Editorial
-
-Share your goal and I'll output a detailed component spec, color system, and image mockup.`
+    return `**GFXTAB UI Agent** — Interface Design for **${brand}**\n\n**What are we designing?**\n\n| Screen | Reference Level |\n|---|---|\n| **Dashboard** | Vercel, Linear, Notion |\n| **Landing Page** | Stripe, Loom, Framer |\n| **Mobile App** | Craft, Figma Mobile |\n| **Onboarding** | Slack, Superhuman |\n| **Settings** | GitHub, Railway |\n\n**Visual direction for ${brand}:**\n• 🌑 **Dark glassmorphism** — Cyber-premium, blur cards, depth layers\n• ⬜ **Light minimal** — Clean SaaS, sharp grid, high contrast\n• 🌈 **Gradient bold** — Consumer app energy, vibrant fills\n• 🔲 **Brutalist** — Editorial, anti-design, high contrast\n\nDescribe the screen or say **"surprise me"** — I'll design it with a full component spec.`
   }
 
+  // ─ COLOR AGENT ────────────────────────────────────────────────────
   if (intent.type === 'palette') {
-    return `**Color Palette Generation — ${brand}**
-
-A brand's color system is its most powerful silent communicator. Let me build you a complete palette.
-
-**What does ${brand} feel like?**
-• Tech & Innovation → Electric Blue + Midnight
-• Luxury & Premium → Gold + Deep Black + Cream
-• Energy & Youth → Lime + Coral + Dark Grey
-• Trust & Professional → Navy + White + Subtle Accent
-
-Or describe the emotion: *"sophisticated but approachable"*, *"aggressive and bold"*, etc.
-
-I'll generate: Primary, Secondary, Accent, Neutral, and Semantic (success/error/warning) colors — all with hex codes and WCAG contrast ratios.`
+    const presets = [
+      { name: 'Tech & Innovation', palette: ['`#0A0A0F`', '`#4F6EF7`', '`#C8FF00`', '`#FFFFFF`'], emotion: 'Intelligent, forward-thinking' },
+      { name: 'Luxury Premium', palette: ['`#0D0A05`', '`#C9A84C`', '`#F5F0E8`', '`#2C2417`'], emotion: 'Exclusive, aspirational' },
+      { name: 'Bold Energy', palette: ['`#0F0F0F`', '`#FF3D00`', '`#FFE500`', '`#FFFFFF`'], emotion: 'High-impact, disruptive' },
+      { name: 'Trust & Authority', palette: ['`#1B2A4A`', '`#2563EB`', '`#F8FAFC`', '`#64748B`'], emotion: 'Reliable, professional' },
+    ]
+    const p = presets[Math.floor(Math.random() * presets.length)]
+    return `**GFXTAB Color Agent** — Palette for **${brand}**\n\nColor is a brand's most powerful unconscious signal.\n\n**Matching preset for ${brand}:**\n**${p.name}** — *${p.emotion}*\n- Primary: ${p.palette[0]}\n- Secondary: ${p.palette[1]}\n- Accent: ${p.palette[2]}\n- Neutral: ${p.palette[3]}\n\n**Or describe the feeling:**\n*"sophisticated but rebellious"*, *"premium but playful"*, *"minimalist with edge"*\n\nI'll output: Primary • Secondary • Accent • 3 Neutrals • Semantic colors (success/warning/error) — all with WCAG ratios.`
   }
 
+  // ─ COPY AGENT ─────────────────────────────────────────────────────
   if (intent.type === 'copy') {
-    return `**Creative Copy Mode — ${brand}**
-
-I'll write high-converting, brand-aligned copy. What do you need?
-
-**Format:**
-• Instagram caption (hook + body + CTA)
-• YouTube script (hook + sections + outro)
-• LinkedIn post (thought leadership)
-• Ad copy (30-word puncher)
-• Product description
-• Brand tagline
-
-**Tone for ${brand}:**
-• Authoritative & Expert
-• Friendly & Conversational
-• Bold & Provocative
-• Inspirational
-
-Give me the topic or paste your draft and I'll transform it.`
+    return `**GFXTAB Copy Agent** — High-Converting Creative Writing for **${brand}**\n\n**Format:**\n- **Instagram caption** — Hook + Story + CTA + hashtags\n- **YouTube hook** — First 3 seconds that stop the scroll\n- **LinkedIn post** — Thought leadership (1K–2K chars)\n- **Ad copy** — 30-word puncher for Meta/Google\n- **Brand tagline** — Sub-7-word brand promise\n- **Email subject** — High open-rate tested formats\n\n**Your brand voice:**\n- 🎯 **Authoritative** — Expert, confident, zero fluff\n- 💬 **Conversational** — Real, human, relatable\n- ⚡ **Bold** — Provocative, contrarian, scroll-stopping\n- 🌟 **Inspirational** — Emotional, motivating, aspirational\n\nTell me the **topic + format + tone** and I'll write it. Or paste a draft and I'll transform it.`
   }
 
-  // Greeting / intro
-  if (/(hello|hi|hey|start|begin|what can you do)/.test(m)) {
-    return `**Welcome to GFXTAB AI Studio${mem.userName ? `, ${mem.userName}` : ''}** 🎨
-
-I'm your dedicated creative AI — built specifically for designers, creators, and brand builders. I combine deep design intelligence with AI generation to help you create faster and better than ever.
-
-**What I can do right now:**
-
-**🖼 Visual Creation**
-• Logos, icons, brand marks
-• YouTube thumbnails (CTR-optimized)
-• Social media visuals
-• Posters, banners, flyers
-
-**🎨 Brand & Design**
-• Full brand identity systems
-• Color palettes with hex codes
-• Typography pairing recommendations
-• UI/UX design concepts
-
-**✍️ Creative Writing**
-• Captions, scripts, ad copy
-• Video hooks & storyboards
-• Product descriptions
-
-**🧠 Design Strategy**
-• Creative direction
-• Competitor analysis
-• Trend insights
-
-Start by describing what you're creating. The more context you give, the better the output. *What are we building today?*`
+  // ─ GREETING ───────────────────────────────────────────────────────
+  if (/(hello|hi|hey|start|begin|what can you do|help|capabilities)/.test(m)) {
+    const greeting = mem.userName ? `Welcome back, **${mem.userName}**` : '**Welcome to GFXTAB AI Studio**'
+    return `${greeting} 🎨\n\nI'm your dedicated creative AI — a full creative team in one interface.\n\n**Active Specialist Agents:**\n\n🎨 **Logo Agent** — Brand identity, logo design, visual marks\n🏢 **Brand Agent** — Full identity systems, brand strategy\n📸 **Social Agent** — Instagram, LinkedIn, YouTube, banners\n🖥️ **UI Agent** — Dashboards, landing pages, app screens\n✍️ **Copy Agent** — Captions, scripts, ads, headlines\n🎨 **Color Agent** — Palettes, hex codes, WCAG systems\n\n**Start with anything:**\n> *"Create a luxury logo for my streetwear brand"*\n> *"Design a dark mode SaaS dashboard"*\n> *"Write a high-converting Instagram caption"*\n> *"Build a complete brand identity for my startup"*\n\nWhat are we creating today${mem.userName ? `, ${mem.userName}` : ''}?`
   }
 
-  // Context-aware follow-up
-  if (isFollowUp && prevWasImage) {
-    const variations = ['more dramatic lighting', 'a different color palette', 'a cleaner minimal version', 'an alternative composition']
-    const pick = variations[Math.floor(Math.random() * variations.length)]
-    return `Building on what we created — shall I generate a variation with **${pick}**? 
-
-Or you can:
-• **Refine** — describe what to change
-• **Upscale** — get a higher detail version
-• **Publish** — send this to your marketplace catalog
-• **New direction** — start a fresh concept
-
-What feels right, ${name}?`
+  // ─ FOLLOW-UP ──────────────────────────────────────────────────────
+  if (isFollowUp && /(yes|sure|go ahead|generate|do it|proceed|make it|create|let's go|ok|okay)/.test(m)) {
+    return `**On it.** Generating now for **${brand}**...\n\nApplying:\n- ${style ? `Your preferred **${style}** aesthetic` : 'Style optimized for your context'}\n- The creative direction we defined\n- Engineered prompts for maximum quality\n\nThe image generation result will appear below. ⬇️`
   }
 
-  // General creative query
-  const topics = [
-    `I understand you want to explore **${message.substring(0, 50)}** for ${brand}. Let me think through this creatively.\n\n**My approach:**\n1. Understand your audience and goal\n2. Research relevant design trends\n3. Engineer a precise creative brief\n4. Generate multiple concepts\n5. Refine based on your feedback\n\nWhat's the primary audience for this? And what feeling should it evoke — excited, trustful, luxurious, energized?`,
-    `Great creative challenge${name !== 'Creator' ? `, ${name}` : ''}! Here's how I'd approach **${message.substring(0, 40)}**:\n\n**Creative Strategy:**\n• Define the core emotion/message\n• Choose visual language that supports it\n• Ensure consistency with ${brand}'s identity\n\n**Quick question:** What platform or medium is this for? The answer completely changes the design approach.`,
-    `For **${brand}**, this is interesting. ${message.length > 30 ? 'I\'ve analyzed your request' : 'Tell me more'} and here\'s my creative take:\n\nThe most effective approach would combine **strong visual hierarchy** with **${mem.style || 'a distinctive style'}** that sets you apart in your space.\n\nWhat's your timeline and what does success look like for this project?`
+  if (isFollowUp) {
+    return `Building on what we discussed${mem.userName ? `, ${mem.userName}` : ''}.\n\n**Next steps for ${brand}:**\n• **Refine** — Tell me what to adjust or improve\n• **Variations** — Generate alternative concepts\n• **Export** — Get the files in your required format\n• **Extend** — Apply this design to other assets (social kit, brand guide, etc.)\n\nWhat direction should we take this?`
+  }
+
+  // ─ GENERAL INTELLIGENT RESPONSE ───────────────────────────────────
+  const strategies = [
+    `Understood${name !== 'Creative' ? `, ${name}` : ''}. For **${brand}**, here's how I'd approach **${message.slice(0, 50).trim()}**:\n\n**Creative Strategy:**\n1. **Define the core** — What single emotion should this make people feel?\n2. **Map the audience** — Who sees this, and in what context?\n3. **Choose visual language** — ${style ? `Your **${style}** style applied here means...` : 'The right direction for your goal'}\n4. **Generate → Refine → Ship**\n\nWhat's the primary goal — awareness, conversion, or engagement?`,
+    `Great challenge${name !== 'Creative' ? ` for ${name}` : ''}. My read on **${message.slice(0, 45).trim()}** for **${brand}**:\n\n**Two routes:**\n\n**Route A — Proven:** Category conventions with a strong GFXTAB execution twist. Lower risk, faster approval.\n\n**Route B — Disruptor:** Break the visual conventions of your space. Higher risk, potentially iconic.\n\n${style ? `Given your **${style}** preference, Route B likely serves you better.` : 'Which fits your risk appetite?'}\n\nWhat's your timeline?`,
+    `For **${brand}**: Here's my strategic read on **${message.slice(0, 40).trim()}**:\n\nThe most effective ${intent.type !== 'chat' ? intent.type : 'creative output'} needs to do two things simultaneously — **stop them in the scroll**, and **feel instantly trustworthy**.\n\n${industry ? `In **${industry}**, this combination converts significantly better than either alone.` : 'These two goals almost always create the best work.'}\n\nDescribe the specific outcome you need and I'll map the exact execution plan.`
   ]
-  return topics[Math.floor(Math.random() * topics.length)]
+  return strategies[Math.floor(Math.random() * strategies.length)]
 }
+
+function getIndustryInsight(industry) {
+  const insights = {
+    fashion: 'Fashion logos that outlast trends use monograms, not mascots. Think LV, Gucci, Balenciaga.',
+    tech: 'Tech brands that last use geometric abstract marks — Apple, Spotify, Airbnb all prove this.',
+    food: 'Food brands convert best with warm palettes (orange, red, yellow) and rounded letterforms.',
+    fitness: 'Fitness brands need aggression: sharp angles, bold weight, extreme contrast.',
+    beauty: 'Beauty brands signal luxury through negative space — less is always more.',
+    gaming: 'Gaming logos need edge: metallic, neon, or chrome with sharp geometric forms.',
+    music: 'Music brand marks that work feel rhythmic — dynamic, fluid, with strong negative space.',
+    finance: 'Finance logos build trust through blue tones, clean lines, and professional sans-serif.',
+    crypto: 'Crypto brands signal innovation through geometric, bold, futuristic minimal palette.',
+    saas: 'SaaS logos that scale are simple enough to work at 16×16px (the favicon test).',
+    ecommerce: 'E-commerce brands win with friendly, approachable marks — avoid corporate coldness.',
+    agency: 'Agency brands need to feel creative-yet-trustworthy — a tension that makes the best marks.',
+    default: 'The strongest logos work in one color, at any size, and stay memorable in 5 seconds.'
+  }
+  return insights[industry] || insights.default
+}
+
 
 // ── Chat History ──────────────────────────────────────────────────
 router.get('/chat/history/:sessionId', (req, res) => {
