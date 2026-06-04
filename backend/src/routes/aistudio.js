@@ -243,10 +243,12 @@ async function simulatedStream(req, res, message, sessionId, aiMode = 'Chat', at
 
   const response = generateDynamicResponse(message, intent, mem, session.history, aiMode, attachments)
 
-  res.setHeader('Content-Type', 'text/event-stream')
-  res.setHeader('Cache-Control', 'no-cache')
-  res.setHeader('Connection', 'keep-alive')
-  res.setHeader('X-Accel-Buffering', 'no')
+  if (!res.headersSent) {
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+  }
 
   res.write(`data: ${JSON.stringify({ type: 'meta', intent: intent.type, needsImage: intent.needsImage, engineeredPrompt })}\n\n`)
 
