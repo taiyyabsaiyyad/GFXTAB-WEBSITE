@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Grid, Star, Heart, Sparkles, Filter, SlidersHorizontal, RefreshCw, Download } from 'lucide-react'
 import { GlowButton, GhostButton } from '@/components/ui/Button.jsx'
 import { GlassCard } from '@/components/ui/Card.jsx'
-import { PRODUCTS } from '@/constants/products.js'
+import { PRODUCTS, MOCK_FREEBIES } from '@/constants/products.js'
 import { useAuthStore, useCollectionStore, useDownloadStore, useMarketplaceStore } from '@/store/index.js'
 import { notify } from '@/components/ui/Toast.jsx'
 
@@ -209,6 +209,9 @@ export default function Dashboard() {
       case 'social_posts':
         baseList = MOCK_SOCIAL_POSTS
         break
+      case 'freebies':
+        baseList = MOCK_FREEBIES
+        break
       case 'artworks':
         baseList = PRODUCTS
         break
@@ -328,6 +331,7 @@ export default function Dashboard() {
           { id: 'mockups', label: 'Mockups' },
           { id: 'logos', label: 'Logos' },
           { id: 'social_posts', label: 'Social Media Posts' },
+          { id: 'freebies', label: 'Freebies (Weekly)' },
           { id: 'artworks', label: 'Our Artworks' }
         ].map((cat) => (
           <motion.button

@@ -188,7 +188,7 @@ export default function UpgradeModal() {
               <div style={{ marginBottom: 'var(--space-4)' }}>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Scan QR via GPay/PhonePe</span>
                 <h4 style={{ fontSize: 'var(--text-xl)', margin: '4px 0 2px', color: 'var(--lime)' }}>₹{selectedPlan.price}.00</h4>
-                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>Payee VPA: <strong>tabsyed@okicici</strong></span>
+                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>Payee VPA: <strong>tabsaiyyad@okicici</strong></span>
               </div>
 
               {/* QR Container */}
@@ -201,7 +201,7 @@ export default function UpgradeModal() {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                 padding: 16
               }}>
-                <QrCode size={168} color="#000" />
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=168x168&data=${encodeURIComponent(`upi://pay?pa=tabsaiyyad@okicici&pn=GFXTAB+Productions&am=${selectedPlan.price}&cu=INR`)}`} alt="UPI Payment QR Code" style={{ width: 168, height: 168 }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 'var(--space-5)' }}>

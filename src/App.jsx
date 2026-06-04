@@ -18,6 +18,7 @@ import Library from '@/pages/Library.jsx'
 import Collections from '@/pages/Collections.jsx'
 import Contact from '@/pages/Contact.jsx'
 import AIStudio from '@/pages/AIStudio.jsx'
+import NotFound from '@/pages/NotFound.jsx'
 
 
 // Auth guard
@@ -178,7 +179,7 @@ export default function App() {
 
 
         {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </HashRouter>
   )

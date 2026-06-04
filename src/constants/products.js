@@ -244,9 +244,17 @@ export const PRODUCTS = [
   },
 ];
 
-// Products that appear in the 3D orbit (top 5 by popularity)
+// Products that appear in the 3D orbit (top-5 by popularity)
 export const ORBIT_PRODUCTS = PRODUCTS.filter(p =>
   ['tshirt-crew', 'book-cover', 'mug-ceramic', 'poster-a3', 'business-card'].includes(p.id)
 );
+
+export const MOCK_FREEBIES = [
+  { id: 'free-A4-Flyer', name: 'A4 Flyer Showcase Mockup', category: 'freebies', description: 'Clean modern A4 size flyer template mockup to present layouts.', previewAsset: 'A4-Flyer-Mock-Up 1.jpg', isPremium: false, price: 0, file: 'A4-Flyer-Mock-Up 1.jpg', tags: ['freebie', 'flyer', 'print'] },
+  { id: 'free-SaaS-UI', name: 'SaaS Platform UI Presentation', category: 'freebies', description: 'Stunning minimal SaaS dashboard user interface layout.', previewAsset: 'Artboard 1.jpg', isPremium: false, price: 0, file: 'Artboard 1.jpg', tags: ['freebie', 'saas', 'dashboard'] },
+  { id: 'free-Apparel', name: 'Clean T-Shirt Apparel Template', category: 'freebies', description: 'Photorealistic black cotton t-shirt mockup with transparent background.', previewAsset: '01_Mockup.png', isPremium: false, price: 0, file: '01_Mockup.png', tags: ['freebie', 'tshirt', 'apparel'] },
+  { id: 'free-Packaging', name: 'Premium Pack Packaging Mockup', category: 'freebies', description: 'Box wipes design layout showcase template.', previewAsset: 'wipes-10s-wipes.jpg', isPremium: false, price: 0, file: 'wipes-10s-wipes.jpg', tags: ['freebie', 'pack', 'packaging'] },
+  { id: 'free-Artshow', name: 'Minimalist Photo Showcase Frame', category: 'freebies', description: 'Creative gallery layout framing template asset.', previewAsset: 'Photo from GFXTAB(1).jpg', isPremium: false, price: 0, file: 'Photo from GFXTAB(1).jpg', tags: ['freebie', 'frame', 'showcase'] }
+];
 
 export default PRODUCTS;

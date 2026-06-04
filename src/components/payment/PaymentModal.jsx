@@ -125,7 +125,7 @@ export default function PaymentModal({ isOpen, onClose, assetName, price, onPaym
               <div style={{ marginBottom: 'var(--space-5)' }}>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Scan QR to Pay</span>
                 <h4 style={{ fontSize: 'var(--text-md)', margin: '4px 0 2px' }}>₹{price}.00</h4>
-                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>UPI Payee: {paymentVpa.replace(/./g, (c, i) => i > 2 && i < paymentVpa.indexOf('@') ? '*' : c)}</span>
+                <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>UPI Payee: {paymentVpa}</span>
               </div>
 
               {/* QR Code Container */}
@@ -138,7 +138,7 @@ export default function PaymentModal({ isOpen, onClose, assetName, price, onPaym
                 boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                 padding: 16
               }}>
-                <QrCode size={168} color="#000" />
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=168x168&data=${encodeURIComponent(`upi://pay?pa=${paymentVpa}&pn=GFXTAB+Productions&am=${price}&cu=INR`)}`} alt="UPI Payment QR Code" style={{ width: 168, height: 168 }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 'var(--space-6)' }}>

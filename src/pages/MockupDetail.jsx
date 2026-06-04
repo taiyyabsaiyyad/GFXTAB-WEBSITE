@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Download, PenTool, Heart, Tag, Eye, Layers, DollarSign, RefreshCw, Star, MessageSquare } from 'lucide-react'
-import { PRODUCTS } from '@/constants/products.js'
+import { PRODUCTS, MOCK_FREEBIES } from '@/constants/products.js'
 import { GhostButton, GlowButton } from '@/components/ui/Button.jsx'
 import { GlassCard } from '@/components/ui/Card.jsx'
 import { notify } from '@/components/ui/Toast.jsx'
@@ -49,7 +49,8 @@ export default function MockupDetail() {
   const staticAsset = PRODUCTS.find((p) => p.id === id) ||
                       MOCK_FONTS.find((f) => f.id === id) ||
                       MOCK_ICONS.find((i) => i.id === id) ||
-                      MOCK_TEMPLATES.find((t) => t.id === id)
+                      MOCK_TEMPLATES.find((t) => t.id === id) ||
+                      MOCK_FREEBIES.find((fr) => fr.id === id)
 
   const asset = staticAsset || vectorAsset
   const isFav = favorites.includes(id)
@@ -147,7 +148,7 @@ export default function MockupDetail() {
   const triggerDownloadAction = () => {
     const currentCredits = useAuthStore.getState().credits
     const isUnlimited = useAuthStore.getState().user?.plan === 'unlimited'
-    const isFreeCategory = asset.category === 'fonts' || asset.category === 'photos'
+    const isFreeCategory = asset.category === 'fonts' || asset.category === 'photos' || asset.category === 'freebies'
     
     if (!isFreeCategory && !isUnlimited && currentCredits < 10) {
       notify.error('Insufficient Credits', 'Recharge your credits to download assets.')
