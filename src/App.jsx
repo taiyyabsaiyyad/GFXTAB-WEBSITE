@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppShell from '@/components/layout/AppShell.jsx'
 import Splash from '@/pages/Splash.jsx'
 import Auth from '@/pages/Auth.jsx'
@@ -43,7 +43,7 @@ export default function App() {
   }, [])
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Splash */}
         <Route
@@ -180,6 +180,6 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
