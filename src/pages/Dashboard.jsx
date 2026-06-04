@@ -107,13 +107,7 @@ export default function Dashboard() {
       }).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    if (portfolioProjects.length === 0 || selectedPortfolioProject) return
-    const timer = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % Math.min(portfolioProjects.length, 5))
-    }, 6000)
-    return () => clearInterval(timer)
-  }, [portfolioProjects, selectedPortfolioProject])
+
 
   useEffect(() => {
     setDisplayLimit(30)
@@ -898,7 +892,7 @@ export default function Dashboard() {
                             <motion.div 
                               initial={{ width: '0%' }}
                               animate={{ width: '100%' }}
-                              transition={{ duration: 5, ease: 'linear' }}
+                              transition={{ duration: 7, ease: 'linear' }}
                               style={{ position: 'absolute', top: 0, left: 0, height: '100%', background: '#fff' }}
                               onAnimationComplete={() => setHeroIndex(prev => (prev + 1) % Math.min(portfolioProjects.length, 5))}
                             />
