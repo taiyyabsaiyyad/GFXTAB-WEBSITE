@@ -81,6 +81,9 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ['**/public/assets/FONT_corrupted/**']
+    },
     port: 5173,
     proxy: {
       '/api': {
