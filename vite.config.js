@@ -1,53 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import fs from 'fs'
-import path from 'path'
-
-// Custom plugin to copy public directory skipping FONT_corrupted
-function copyPublicDirPlugin() {
-  return {
-    name: 'copy-public-dir-plugin',
-    closeBundle() {
-      const srcDir = resolve(__dirname, 'public')
-      const destDir = resolve(__dirname, 'dist')
-      
-      if (!fs.existsSync(srcDir)) return
-
-      const copyRecursive = (src, dest) => {
-        try {
-          const stats = fs.statSync(src)
-          if (stats.isDirectory()) {
-            // Skip FONT_corrupted
-            if (src.endsWith('FONT_corrupted')) {
-              return
-            }
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true })
-            }
-            const files = fs.readdirSync(src)
-            for (const file of files) {
-              copyRecursive(path.join(src, file), path.join(dest, file))
-            }
-          } else {
-            fs.copyFileSync(src, dest)
-          }
-        } catch (err) {
-          console.warn(`Warning: Could not copy ${src}: ${err.message}`)
-        }
-      }
-      
-      console.log('Custom copying assets from public to dist (skipping FONT_corrupted)...')
-      copyRecursive(srcDir, destDir)
-      console.log('Custom copy complete!')
-    }
-  }
-}
 
 export default defineConfig({
   base: '/GFXTAB-WEBSITE/',
-  publicDir: false, // Disable default copier that crashes on FONT_corrupted
-  plugins: [react(), copyPublicDirPlugin()],
+  publicDir: 'public_clean',
+  plugins: [react()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -82,7 +40,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored: ['**/public/assets/FONT_corrupted/**']
+      ignored: ['**/FONT_corrupted/**']
     },
     port: 5173,
     proxy: {
